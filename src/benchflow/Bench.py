@@ -5,7 +5,7 @@ import time
 import requests
 from typing import List, Union
 import logging
-from BaseAgent import BaseAgent
+from .BaseAgent import BaseAgent
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,4 +1,4 @@
-from Bench import Bench
+from .Bench import Bench
 
 BENCHMARK_REGISTRY = {
     "cmu/webarena": "http://webarena-benchmark:8000",
