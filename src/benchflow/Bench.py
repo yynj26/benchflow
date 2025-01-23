@@ -18,6 +18,7 @@ class Bench:
         self.results = {}
         
     def run(self, task_ids: Union[str, List[str]], agents: Union[BaseAgent, List[BaseAgent]], require_gpu: bool = False):
+        assert not isinstance(task_ids, int)
         if isinstance(task_ids, str):
             task_ids = [task_ids]
         if isinstance(agents, BaseAgent):
@@ -49,21 +50,24 @@ class Bench:
             host, port = deploy_info["host"], deploy_info["port"]
             agent_url = f"http://{host}:{port}"
 
+
             self.running_tasks[task_id] = {
                 "host": host,
                 "port": port,
                 "start_time": time.time()
             }
-            print(self.benchmark_url)
+
+            url = f"{self.benchmark_url}/api/v1/{self.benchmark_name}/evaluate"
+
             result = requests.post(
-                f"{self.benchmark_url}/api/v1/{self.benchmark_name}/evaluate",
+                url,
                 json={
                     "task_id": task_id,
                     "agent_url": agent_url,
                     "params": {}
                 }
             )
-            print(result)
+
             self.results[task_id] = result
             
             return result
