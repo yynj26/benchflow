@@ -1,9 +1,8 @@
-import signal
 import sys
 import base64
 import time
 import requests
-from typing import List, Union
+from typing import List, Union, Dict, Any
 import logging
 from .BaseAgent import BaseAgent
 
@@ -11,14 +10,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class Bench:
-    def __init__(self, benchmark_url: str):
-        self.benchmark_url = benchmark_url
+    def __init__(self, benchmark: Dict[str, Any]):
+        self.benchmark_url = benchmark["benchmark_url"]
+        self.benchmark_name = benchmark["benchmark_name"]
         self.resource_manager_url = "http://159.89.229.132:10000"
         self.running_tasks = {}
         self.results = {}
-
-        signal.signal(signal.SIGINT, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
         
     def run(self, task_ids: Union[str, List[str]], agents: Union[BaseAgent, List[BaseAgent]], require_gpu: bool = False):
         if isinstance(task_ids, str):
@@ -51,14 +48,22 @@ class Bench:
             deploy_info = response.json()
             host, port = deploy_info["host"], deploy_info["port"]
             agent_url = f"http://{host}:{port}"
-            
+
             self.running_tasks[task_id] = {
                 "host": host,
                 "port": port,
                 "start_time": time.time()
             }
-
-            result = self.benchmark_server.evaluate(agent_url, task_id)
+            print(self.benchmark_url)
+            result = requests.post(
+                f"{self.benchmark_url}/api/v1/{self.benchmark_name}/evaluate",
+                json={
+                    "task_id": task_id,
+                    "agent_url": agent_url,
+                    "params": {}
+                }
+            )
+            print(result)
             self.results[task_id] = result
             
             return result
@@ -98,7 +103,3 @@ class Bench:
 
     def __del__(self):
         self.cleanup()
-
-    # def _signal_handler(self, signum, frame):
-    #     self.cleanup()
-    #     sys.exit(0)
