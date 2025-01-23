@@ -45,7 +45,7 @@ class Bench:
                 }
             )
             response.raise_for_status()
-            logger.info(f"{Baseagent.__class__.__name__} deployed successfully")
+            logger.info(f"{Baseagent.__class__.__name__} deployed successfully on port {response.json()['port']}")
             
             deploy_info = response.json()
             host, port = deploy_info["host"], deploy_info["port"]
