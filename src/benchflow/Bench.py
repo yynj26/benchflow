@@ -28,11 +28,11 @@ class Bench:
         for task_id in task_ids:
             for Baseagent in agents:
                 results.append(self._run_single_task(task_id, Baseagent, require_gpu))
-            
+        self.cleanup()
         return results if len(task_ids) > 1 or len(agents) > 1 else results[0]
 
     def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool):
-        logger.info(f"Starting task {task_id}")
+        logger.info(f"Starting task {task_id} on {Baseagent.__class__.__name__}")
         
         try:
             agent_code = self._get_agent_code(Baseagent)
@@ -45,6 +45,7 @@ class Bench:
                 }
             )
             response.raise_for_status()
+            logger.info(f"{Baseagent.__class__.__name__} deployed successfully")
             
             deploy_info = response.json()
             host, port = deploy_info["host"], deploy_info["port"]
@@ -68,9 +69,11 @@ class Bench:
                 }
             )
 
-            self.results[task_id] = result
+            logger.info(f"Task {task_id} on {Baseagent.__class__.__name__} finished")
+
+            self.results[task_id] = result.json()
             
-            return result
+            return result.json()
             
         except Exception as e:
             logger.error(f"Task {task_id} failed: {str(e)}")
@@ -89,21 +92,17 @@ class Bench:
             return f.read()
 
     def cleanup(self):
-            print("Cleaning up resources...")
-            print(self.running_tasks.items())
-            for task_id, task_info in self.running_tasks.items():
-                print("send release request")
-                try:
-                    requests.post(
-                        f"{self.resource_manager_url}/release",
-                        json={
-                            "host": task_info["host"],
-                            "port": task_info["port"]
-                        }
-                    )
-                except:
-                    print("release request failed")
-                    pass
-
-    def __del__(self):
-        self.cleanup()
+        for task_id, task_info in self.running_tasks.items():
+            logger.info(f"Releasing task {task_id} on {task_info['host']}:{task_info['port']}")
+            try:
+                response = requests.post(
+                    f"{self.resource_manager_url}/release",
+                    json={
+                        "host": task_info["host"],
+                        "port": task_info["port"]
+                    }
+                )
+                response.raise_for_status()
+                logger.info(f"Release successfully for task {task_id} on {task_info['host']}:{task_info['port']}")
+            except Exception as e:
+                logger.error(f"Release request failed for task {task_id} on {task_info['host']}:{task_info['port']}: {str(e)}")
