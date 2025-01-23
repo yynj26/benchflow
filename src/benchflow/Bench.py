@@ -17,19 +17,22 @@ class Bench:
         self.running_tasks = {}
         self.results = {}
         
-    def run(self, task_ids: Union[str, List[str]], agents: Union[BaseAgent, List[BaseAgent]], require_gpu: bool = False):
-        assert not isinstance(task_ids, int)
-        if isinstance(task_ids, str):
-            task_ids = [task_ids]
+    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], require_gpu: bool = False):
+        if isinstance(task_ids, str|int):
+            task_ids = [str(task_ids)]
         if isinstance(agents, BaseAgent):
             agents = [agents]
 
-        results = []
+        results_ids = []
         for task_id in task_ids:
+            task_id = str(task_id)
             for Baseagent in agents:
-                results.append(self._run_single_task(task_id, Baseagent, require_gpu))
+                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu))
         self.cleanup()
-        return results if len(task_ids) > 1 or len(agents) > 1 else results[0]
+        return results_ids
+
+    def get_results(self, run_ids: List[str]):
+        return [self.results[run_id] for run_id in run_ids]
 
     def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool):
         logger.info(f"Starting task {task_id} on {Baseagent.__class__.__name__}")
@@ -70,22 +73,14 @@ class Bench:
             )
 
             logger.info(f"Task {task_id} on {Baseagent.__class__.__name__} finished")
-
             self.results[task_id] = result.json()
-            
-            return result.json()
+            return task_id
             
         except Exception as e:
             logger.error(f"Task {task_id} failed: {str(e)}")
-            if task_id in self.running_tasks:
-                task_info = self.running_tasks[task_id]
-                requests.post(
-                    f"{self.resource_manager_url}/release",
-                    json={"host": task_info["host"], "port": task_info["port"]}
-                )
-                del self.running_tasks[task_id]
-            raise
-            
+            self.results[task_id] = "failed"
+            return task_id
+        
     def _get_agent_code(self, Baseagent: BaseAgent) -> str:
         agent_file = sys.modules[Baseagent.__class__.__module__].__file__
         with open(agent_file, 'r') as f:
