@@ -25,7 +25,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/benchflow-ai/benchflow"
-Bug Tracker = "https://github.com/benchflow-ai/benchflow/issues"
+"Bug Tracker" = "https://github.com/benchflow-ai/benchflow/issues"
 
 [build-system]
 requires = ["hatchling"]
