@@ -17,7 +17,7 @@ class Bench:
         self.running_tasks = {}
         self.results = {}
         
-    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], api: Dict[str, str] = None, require_gpu: bool = False):
+    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], api: Dict[str, str] = None, require_gpu: bool = False, params: Dict[str, Any] = {}):
         if isinstance(task_ids, str|int):
             task_ids = [str(task_ids)]
         if isinstance(agents, BaseAgent):
@@ -27,14 +27,14 @@ class Bench:
         for task_id in task_ids:
             task_id = str(task_id)
             for Baseagent in agents:
-                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, api))
+                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, api, params))
         self.cleanup()
         return results_ids
 
     def get_results(self, run_ids: List[str]):
         return [self.results[run_id] for run_id in run_ids]
 
-    def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool, api: Dict[str, str] = None):
+    def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool, api: Dict[str, str] = None, params: Dict[str, Any] = {}):
         logger.info(f"Starting task {task_id} on {Baseagent.__class__.__name__}")
         
         try:
@@ -69,7 +69,7 @@ class Bench:
                 json={
                     "task_id": task_id,
                     "agent_url": agent_url,
-                    "params": {}
+                    "params": params
                 }
             )
 
