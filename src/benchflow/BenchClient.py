@@ -18,7 +18,7 @@ class BenchClient(ABC):
         pass
 
     @abstractmethod
-    def parse_action(self, raw_action: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_action(self, raw_action: str) -> Dict[str, Any]:
         pass
 
     def get_action(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
