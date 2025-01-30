@@ -31,8 +31,7 @@ class BenchClient(ABC):
             try:
                 response = requests.post(
                     urljoin(self.agent_url, "action"),
-                    json=env_data,
-                    timeout=30
+                    json=env_data
                 )
                 response.raise_for_status()
                 break
