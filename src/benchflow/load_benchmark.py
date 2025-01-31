@@ -3,6 +3,7 @@ from .Bench import Bench
 BENCHMARK_REGISTRY = {
     "webarena": "http://ec2-3-232-182-160.compute-1.amazonaws.com:12345",
     "webcanvas": "http://ec2-3-232-182-160.compute-1.amazonaws.com:12345",
+    "swebench": "http://ec2-3-232-182-160.compute-1.amazonaws.com:12345",
 }
 
 def load_benchmark(benchmark_name: str) -> Bench:
