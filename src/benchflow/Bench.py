@@ -17,7 +17,7 @@ class Bench:
         self.running_tasks = {}
         self.results = {}
         
-    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], api: Dict[str, str] = None, require_gpu: bool = False, params: Dict[str, Any] = {}):
+    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], requirements_dir: str, api: Dict[str, str] = None, require_gpu: bool = False, params: Dict[str, Any] = {}):
         if isinstance(task_ids, str|int):
             task_ids = [str(task_ids)]
         if isinstance(agents, BaseAgent):
@@ -27,23 +27,26 @@ class Bench:
         for task_id in task_ids:
             task_id = str(task_id)
             for Baseagent in agents:
-                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, api, params))
+                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, requirements_dir, api, params))
         self.cleanup()
         return results_ids
 
     def get_results(self, run_ids: List[str]):
         return [self.results[run_id] for run_id in run_ids]
 
-    def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool, api: Dict[str, str] = None, params: Dict[str, Any] = {}):
+    def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool, requirements_dir: str, api: Dict[str, str] = None, params: Dict[str, Any] = {}):
         logger.info(f"Starting task {task_id} on {Baseagent.__class__.__name__}")
         
         try:
+            with open(requirements_dir, 'r') as f:
+                requirements_txt = f.read()
             agent_code = self._get_agent_code(Baseagent)
             response = requests.post(
                 f"{self.resource_manager_url}/deploy",
                 json={
                     "agent_code": base64.b64encode(agent_code.encode()).decode(),
                     "require_gpu": require_gpu,
+                    "requirements_txt": base64.b64encode(requirements_txt.encode()).decode(),
                     "benchmark_name": self.benchmark_name,
                     "api": api
                 }
@@ -64,7 +67,7 @@ class Bench:
 
             url = f"{self.benchmark_url}/api/v1/{self.benchmark_name}/evaluate"
 
-            result = requests.post(
+            response = requests.post(
                 url,
                 json={
                     "task_id": task_id,
@@ -74,11 +77,13 @@ class Bench:
             )
 
             logger.info(f"Task {task_id} on {Baseagent.__class__.__name__} finished")
-            self.results[task_id] = result.json()
+            self.results[task_id] = response.json()
             return task_id
-            
+        
         except Exception as e:
+            error_detail = response.json()['detail']
             logger.error(f"Task {task_id} failed: {str(e)}")
+            logger.error(f"Task {task_id} error detail: {error_detail}")
             self.results[task_id] = "failed"
             return task_id
         
