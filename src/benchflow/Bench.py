@@ -17,7 +17,14 @@ class Bench:
         self.running_tasks = {}
         self.results = {}
         
-    def run(self, task_ids: Union[str|int, List[str|int]], agents: Union[BaseAgent, List[BaseAgent]], requirements_dir: str, api: Dict[str, str] = None, require_gpu: bool = False, params: Dict[str, Any] = {}):
+    def run(self, task_ids: Union[str|int, List[str|int]], 
+            agents: Union[BaseAgent, List[BaseAgent]], 
+            requirements_dir: str, 
+            install_sh: str = None, 
+            api: Dict[str, str] = None, 
+            require_gpu: bool = False, 
+            params: Dict[str, Any] = {}):
+        
         if isinstance(task_ids, str|int):
             task_ids = [str(task_ids)]
         if isinstance(agents, BaseAgent):
@@ -27,14 +34,21 @@ class Bench:
         for task_id in task_ids:
             task_id = str(task_id)
             for Baseagent in agents:
-                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, requirements_dir, api, params))
+                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, requirements_dir, install_sh, api, params))
         self.cleanup()
         return results_ids
 
     def get_results(self, run_ids: List[str]):
         return [self.results[run_id] for run_id in run_ids]
 
-    def _run_single_task(self, task_id: str, Baseagent: BaseAgent, require_gpu: bool, requirements_dir: str, api: Dict[str, str] = None, params: Dict[str, Any] = {}):
+    def _run_single_task(self, task_id: str, 
+                         Baseagent: BaseAgent, 
+                         require_gpu: bool, 
+                         requirements_dir: str, 
+                         install_sh: str, 
+                         api: Dict[str, str] = None, 
+                         params: Dict[str, Any] = {}):
+        
         logger.info(f"Starting task {task_id} on {Baseagent.__class__.__name__}")
         
         try:
@@ -47,6 +61,7 @@ class Bench:
                     "agent_code": base64.b64encode(agent_code.encode()).decode(),
                     "require_gpu": require_gpu,
                     "requirements_txt": base64.b64encode(requirements_txt.encode()).decode(),
+                    "install_sh": base64.b64encode(install_sh.encode()).decode() if install_sh else None,
                     "benchmark_name": self.benchmark_name,
                     "api": api
                 }
