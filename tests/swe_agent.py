@@ -14,6 +14,8 @@ class SWEAgent(BaseAgent):
     def call_api(self) -> str:
         instance_id = self.env_info["instance_id"]
         shutil.rmtree("trajectories/root/", ignore_errors=True)
+        # import time
+        # time.sleep(300)
         cmd = f"sweagent run-batch --agent.model.name {self.model_name} --agent.model.per_instance_cost_limit 0.10 --instances.split test --instances.filter {instance_id}"
 
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True) 

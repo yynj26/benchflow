@@ -20,7 +20,7 @@ class Bench:
     def run(self, task_ids: Union[str|int, List[str|int]], 
             agents: Union[BaseAgent, List[BaseAgent]], 
             requirements_dir: str, 
-            install_sh: str = None, 
+            install_sh_dir: str = None, 
             api: Dict[str, str] = None, 
             require_gpu: bool = False, 
             params: Dict[str, Any] = {}):
@@ -34,7 +34,7 @@ class Bench:
         for task_id in task_ids:
             task_id = str(task_id)
             for Baseagent in agents:
-                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, requirements_dir, install_sh, api, params))
+                results_ids.append(self._run_single_task(task_id, Baseagent, require_gpu, requirements_dir, install_sh_dir, api, params))
         self.cleanup()
         return results_ids
 
@@ -45,7 +45,7 @@ class Bench:
                          Baseagent: BaseAgent, 
                          require_gpu: bool, 
                          requirements_dir: str, 
-                         install_sh: str, 
+                         install_sh_dir: str, 
                          api: Dict[str, str] = None, 
                          params: Dict[str, Any] = {}):
         
@@ -54,6 +54,8 @@ class Bench:
         try:
             with open(requirements_dir, 'r') as f:
                 requirements_txt = f.read()
+            with open(install_sh_dir, 'r') as f:
+                install_sh = f.read()
             agent_code = self._get_agent_code(Baseagent)
             response = requests.post(
                 f"{self.resource_manager_url}/deploy",
