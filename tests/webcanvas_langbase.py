@@ -1,8 +1,10 @@
-import os
-import json5
 import logging
+import os
+
+import json5
 import requests
 from jinja2 import Template
+
 from benchflow import BaseAgent
 
 logging.basicConfig(

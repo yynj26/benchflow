@@ -1,6 +1,8 @@
-from benchflow import load_benchmark
-from swe_agent import SWEAgent
 import os
+
+from swe_agent import SWEAgent
+
+from benchflow import load_benchmark
 
 bench = load_benchmark(benchmark_name="swebench")
 

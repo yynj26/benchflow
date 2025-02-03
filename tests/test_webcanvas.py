@@ -1,6 +1,8 @@
-from benchflow import load_benchmark
-from webcanvas_openai import WebcanvasAgent
 import os
+
+from webcanvas_openai import WebcanvasAgent
+
+from benchflow import load_benchmark
 
 bench = load_benchmark(benchmark_name="webcanvas")
 

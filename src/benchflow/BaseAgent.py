@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+import logging
+from abc import ABC, abstractmethod
+from typing import Any, Dict
+
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
-from abc import ABC, abstractmethod
-import logging
-import uvicorn
 
 logger = logging.getLogger(__name__)
 

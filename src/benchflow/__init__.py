@@ -1,5 +1,5 @@
-from .Bench import Bench
 from .BaseAgent import BaseAgent
+from .Bench import Bench
 from .BenchClient import BenchClient
 from .load_benchmark import load_benchmark
 
