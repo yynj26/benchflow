@@ -1,0 +1,7 @@
+target-version = "py311"
+exclude = [
+  ".venv",
+]
+
+[lint]
+extend-select = ["I", "B"]
