@@ -20,7 +20,7 @@ class Bench:
     def __init__(self, benchmark: Dict[str, Any]):
         self.benchmark_url = benchmark["benchmark_url"]
         self.benchmark_name = benchmark["benchmark_name"]
-        self.resource_manager_url = "http://159.89.229.132:10000"
+        self.resource_manager_url = "http://ec2-3-232-182-160.compute-1.amazonaws.com:10000"
         self.running_agents = {}
         self.results = {}
         
