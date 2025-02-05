@@ -12,3 +12,7 @@ class BaseBench(ABC):
     @abstractmethod
     def get_all_tasks(self):
         pass
+
+    @abstractmethod
+    def cleanup(self):
+        pass
