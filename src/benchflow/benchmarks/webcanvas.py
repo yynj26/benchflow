@@ -1,8 +1,11 @@
-from benchflow import BaseBench
-from typing import Dict, Any
-import docker
-import os
 import json
+import os
+from typing import Any, Dict
+
+import docker
+
+from benchflow import BaseBench
+
 
 class WebCanvasBench(BaseBench):
     def __init__(self):
@@ -58,7 +61,7 @@ class WebCanvasBench(BaseBench):
                     "task_id": str(task_id),
                     "is_resolved": False,
                     "score": 0,
-                    "message": {"error": f"No results found"}
+                    "message": {"error": "No results found"}
                 }
 
             results = self._get_results(result_file)
@@ -75,7 +78,7 @@ class WebCanvasBench(BaseBench):
                 "task_id": str(task_id),
                 "is_resolved": False,
                 "score": 0,
-                "message": {"error": f"Image not found"}
+                "message": {"error": "Image not found"}
             }
   
         except Exception as e:
