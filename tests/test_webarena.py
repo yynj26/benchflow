@@ -17,4 +17,3 @@ run_ids = bench.run(
 )
 
 results = bench.get_results(run_ids)
-print(results)

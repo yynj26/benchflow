@@ -3,9 +3,11 @@ import logging
 import sys
 import time
 from typing import Any, Dict, List, Union
+import signal
 
 import requests
 from requests.exceptions import HTTPError
+import json
 
 from .BaseAgent import BaseAgent
 
@@ -23,6 +25,9 @@ class Bench:
         self.resource_manager_url = "http://ec2-3-232-182-160.compute-1.amazonaws.com:10000"
         self.running_agents = {}
         self.results = {}
+
+        signal.signal(signal.SIGINT, self._handle_exit)
+        signal.signal(signal.SIGTERM, self._handle_exit)
         
     def run(self, task_ids: Union[str|int, List[str|int]], 
             agents: Union[BaseAgent, List[BaseAgent]], 
@@ -38,19 +43,28 @@ class Bench:
             agents = [agents]
         
         results_ids = []
-        for agent in agents:
-            agent_url = self._deploy_agent(agent, require_gpu, requirements_dir, install_sh, api)
-            if not agent_url:
-                logger.error(f"Deployment failed on {agent.__class__.__name__}")
-                continue
-            for task_id in task_ids:
-                task_id = str(task_id)
-                results_ids.append(self._run_single_task(task_id, agent_url, agent, params))
+        try:
+            for agent in agents:
+                agent_url = self._deploy_agent(agent, require_gpu, requirements_dir, install_sh, api)
+                if not agent_url:
+                    logger.error(f"Deployment failed on {agent.__class__.__name__}")
+                    self._cleanup()
+                    continue
+                for task_id in task_ids:
+                    task_id = str(task_id)
+                    results_ids.append(self._run_single_task(task_id, agent_url, agent, params))
             self._cleanup()
-        return results_ids
+            return results_ids
+        except Exception as e:
+            logger.error(f"Error running benchmark: {str(e)}")
+            self._cleanup()
+            return results_ids
 
     def get_results(self, run_ids: List[str]):
-        return [self.results[run_id] for run_id in run_ids]
+        results = [self.results[run_id] for run_id in run_ids]
+        pretty_results = json.dumps(results, indent=4, ensure_ascii=False)
+        print(pretty_results)
+        return results
 
     def _deploy_agent(self, 
                       agent: BaseAgent, 
@@ -147,3 +161,8 @@ class Bench:
                 logger.info(f"Release successfully for agent {agent_name} on {agent_info['host']}:{agent_info['port']}")
             except Exception as e:
                 logger.error(f"Release request failed for agent {agent_name} on {agent_info['host']}:{agent_info['port']}: {str(e)}")
+    
+    def _handle_exit(self, signum, frame):
+        logger.info(f"Received termination signal {signum}, cleaning up...")
+        self._cleanup()
+        sys.exit(0)
