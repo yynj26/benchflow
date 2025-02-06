@@ -45,9 +45,9 @@ class Bench:
                     logger.error(f"Deployment failed on {agent.__class__.__name__}")
                     self._cleanup()
                     continue
-            for task_id in task_ids:
-                task_id = str(task_id)
-                results_ids.append(self._run_single_task(task_id, agent_url, agent, params))
+                for task_id in task_ids:
+                    task_id = str(task_id)
+                    results_ids.append(self._run_single_task(task_id, agent_url, agent, params))
             self._cleanup()
             return results_ids
         except Exception as e:
