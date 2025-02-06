@@ -57,7 +57,10 @@ class Bench:
             return results_ids
 
     def get_results(self, run_ids: List[str]):
-        return [json.dumps(self.results[run_id], indent=2) for run_id in run_ids]           
+        results = [self.results[run_id] for run_id in run_ids]
+        pretty_results = json.dumps(results, indent=4, ensure_ascii=False)
+        print(pretty_results)
+        return results
 
     def _deploy_agent(self, 
                       agent: BaseAgent, 
