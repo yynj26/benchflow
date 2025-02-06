@@ -4,6 +4,12 @@ import logging
 import sys
 
 class ColoredFormatter(logging.Formatter):
+    def __init__(self):
+        super().__init__(
+           fmt='%(colored_level)s: -- %(name)s -- %(message)s',
+           datefmt='%H:%M:%S'
+       )
+
     def format(self, record):
         record.msg = " ".join(record.msg.strip().splitlines())
         return super().format(record).strip()
