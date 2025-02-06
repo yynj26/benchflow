@@ -42,6 +42,7 @@ class Bench:
             agent_url = self._deploy_agent(agent, require_gpu, requirements_dir, install_sh, api)
             if not agent_url:
                 logger.error(f"Deployment failed on {agent.__class__.__name__}")
+                self._cleanup()
                 continue
             for task_id in task_ids:
                 task_id = str(task_id)
