@@ -3,6 +3,7 @@ import logging
 import sys
 import time
 from typing import Any, Dict, List, Union
+import signal
 
 import requests
 from requests.exceptions import HTTPError
@@ -24,6 +25,9 @@ class Bench:
         self.resource_manager_url = "http://ec2-3-232-182-160.compute-1.amazonaws.com:10000"
         self.running_agents = {}
         self.results = {}
+
+        signal.signal(signal.SIGINT, self._handle_exit)
+        signal.signal(signal.SIGTERM, self._handle_exit)
         
     def run(self, task_ids: Union[str|int, List[str|int]], 
             agents: Union[BaseAgent, List[BaseAgent]], 
@@ -157,3 +161,8 @@ class Bench:
                 logger.info(f"Release successfully for agent {agent_name} on {agent_info['host']}:{agent_info['port']}")
             except Exception as e:
                 logger.error(f"Release request failed for agent {agent_name} on {agent_info['host']}:{agent_info['port']}: {str(e)}")
+    
+    def _handle_exit(self, signum, frame):
+        logger.info(f"Received termination signal {signum}, cleaning up...")
+        self._cleanup()
+        sys.exit(0)
