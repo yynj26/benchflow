@@ -38,17 +38,22 @@ class Bench:
             agents = [agents]
         
         results_ids = []
-        for agent in agents:
-            agent_url = self._deploy_agent(agent, require_gpu, requirements_dir, install_sh, api)
-            if not agent_url:
-                logger.error(f"Deployment failed on {agent.__class__.__name__}")
-                self._cleanup()
-                continue
+        try:
+            for agent in agents:
+                agent_url = self._deploy_agent(agent, require_gpu, requirements_dir, install_sh, api)
+                if not agent_url:
+                    logger.error(f"Deployment failed on {agent.__class__.__name__}")
+                    self._cleanup()
+                    continue
             for task_id in task_ids:
                 task_id = str(task_id)
                 results_ids.append(self._run_single_task(task_id, agent_url, agent, params))
             self._cleanup()
-        return results_ids
+            return results_ids
+        except Exception as e:
+            logger.error(f"Error running benchmark: {str(e)}")
+            self._cleanup()
+            return results_ids
 
     def get_results(self, run_ids: List[str]):
         return [self.results[run_id] for run_id in run_ids]
