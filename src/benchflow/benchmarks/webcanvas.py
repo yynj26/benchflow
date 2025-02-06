@@ -11,7 +11,7 @@ class WebCanvasBench(BaseBench):
         self.results_dir = os.path.abspath("./tmp/webcanvas/results")
         self.log_files_dir = os.path.abspath("./tmp/webcanvas/log_files")
 
-    def run_bench(self, agent_url: str, task_id: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
         client = docker.from_env()
         self._validate_params(params)
         os.makedirs(self.results_dir, exist_ok=True)
