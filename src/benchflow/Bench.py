@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Union
 
 import requests
 from requests.exceptions import HTTPError
+import json
 
 from .BaseAgent import BaseAgent
 
@@ -56,7 +57,7 @@ class Bench:
             return results_ids
 
     def get_results(self, run_ids: List[str]):
-        return [self.results[run_id] for run_id in run_ids]
+        return [json.dumps(self.results[run_id], indent=2) for run_id in run_ids]           
 
     def _deploy_agent(self, 
                       agent: BaseAgent, 

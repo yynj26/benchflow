@@ -45,7 +45,6 @@ class WebArenaBench(BaseBench):
             output = ""
             for line in container.logs(stream=True):
                 line_str = line.decode('utf-8')
-                self.logger.info(line_str)
                 output += line_str
                 
             container.wait()
