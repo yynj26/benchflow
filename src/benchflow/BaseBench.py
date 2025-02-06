@@ -13,13 +13,24 @@ class ColoredFormatter(logging.Formatter):
             datefmt="%H:%M:%S"
         )
 
+    class ColoredFormatter(logging.Formatter):
+    green = "\x1b[32m"
+    reset = "\x1b[0m"
+
+    def __init__(self):
+        super().__init__(
+            fmt="%(colored_level)s: -- %(name)s -- %(message)s",
+            datefmt="%H:%M:%S"
+        )
+
     def format(self, record):
         if record.levelname == "INFO":
             record.colored_level = f"{self.green}INFO{self.reset}"
         else:
             record.colored_level = record.levelname
-        if record.msg:
-            record.msg = record.msg.replace("\n", " ")
+
+        record.msg = " ".join(record.msg.splitlines())
+
         return super().format(record)
 
 def setup_logger(name: str, log_file: Optional[str] = None) -> logging.Logger:
