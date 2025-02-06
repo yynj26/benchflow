@@ -23,7 +23,7 @@ class WebCanvasBench(BaseBench):
                 environment={
                     "AGENT_URL": agent_url,
                     "TEST_START_IDX": str(task_id),
-                    "TEST_END_IDX": str(int(task_id)),
+                    "TEST_END_IDX": str(task_id),
                     "BROWSERBASE_API_KEY": params["browserbase_api_key"],
                     "GRAPHQL_USERNAME": params["graphql_username"],
                     "GRAPHQL_PASSWORD": params["graphql_password"],
