@@ -67,7 +67,7 @@ class WebCanvasBench(BaseBench):
                 "task_id": str(task_id),
                 "is_resolved": results["task_success_rate"] > 0.99,
                 "score": results["average_step_score_rate"],
-                "message": '{' + ', '.join(f'{k}: {v}' for k,v in results.items()) + '}'
+                "message": {"details": '{' + ', '.join(f'{k}: {v}' for k,v in results.items()) + '}'}
             }
 
         except docker.errors.ImageNotFound:
