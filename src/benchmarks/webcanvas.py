@@ -7,6 +7,9 @@ import json
 class WebCanvasBench(BaseBench):
     def __init__(self):
         super().__init__()
+        self.image_name = "kirk2000/benchflow:webcanvas-v1"
+        self.results_dir = os.path.abspath("./tmp/webcanvas/results")
+        self.log_files_dir = os.path.abspath("./tmp/webcanvas/log_files")
 
     def run_bench(self, agent_url: str, task_id: str, params: Dict[str, Any]) -> Dict[str, Any]:
         client = docker.from_env()
