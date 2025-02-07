@@ -106,20 +106,23 @@ class BaseBench(ABC):
             if not self.validate_result(result):
                 return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(result)})
 
-            return self.format_result(task_id, result["is_resolved"], result["score"], result["message"])
+            return self.format_result(task_id, result["is_resolved"], result["score"], result["message"], result["log"])
         except docker.errors.ImageNotFound:
             return self.format_result(task_id, False, 0, {"error": "Image not found"})
         except Exception as e:
             self.logger.exception("Error during benchmark execution:")
             return self.format_result(task_id, False, 0, {"error": str(e)})
 
-    def format_result(self, task_id: str, is_resolved: bool, score: float, message: Dict[str, Any]) -> Dict[str, Any]:
+    def format_result(self, task_id: str, is_resolved: bool, score: float, message: Dict[str, Any], log: Optional[str] = None) -> Dict[str, Any]:
         # TODO: inform the bff that the task is successful
+        if log is None:
+            log = message["error"]
         return {
             "task_id": task_id,
             "is_resolved": is_resolved,
             "score": score,
-            "message": message
+            "message": message,
+            "log": log
         }
 
     def get_volumes(self) -> Dict[str, Dict[str, str]]:

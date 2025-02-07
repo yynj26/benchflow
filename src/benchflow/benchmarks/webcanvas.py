@@ -78,8 +78,7 @@ class WebCanvasBench(BaseBench):
         is_resolved = results.get("task_success_rate", 0) > 0.99
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
-        message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
-        return {"is_resolved": is_resolved, "score": score, "message": message}
+        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task runs successfully."} , "log": ', '.join(f"{k}: {v}" for k, v in results.items())}
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """
