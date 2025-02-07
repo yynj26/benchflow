@@ -66,7 +66,7 @@ class BaseBenchConfig:
 
 class BaseBench(ABC):
     def __init__(self):
-        self.logger = self.setup_logger()
+        self.logger = setup_logger(self.__class__.__name__)
         self.docker_client = docker.from_env()
 
     def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
