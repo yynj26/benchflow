@@ -1,116 +1,91 @@
+# webcanvasbench.py
 import json
 import os
 from typing import Any, Dict
 
-import docker
+from benchflow import BaseBench, BaseBenchConfig
 
-from benchflow import BaseBench
+##############################################################################
+# Custom configuration: Define the environment variables and validation rules for WebCanvasBench
+##############################################################################
+class WebCanvasConfig(BaseBenchConfig):
+    # These envs are required by the benchmark, and should be provided by the user.
+    required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"]
+    # These envs are optional, and will use the default value if not provided.
+    optional_env = []
+    # These envs are defaults, and will be used if not provided.
+    defaults = {}
 
-
+##############################################################################
+# WebCanvasBench implementation
+##############################################################################
 class WebCanvasBench(BaseBench):
-    def __init__(self):
-        super().__init__()
-        self.image_name = "kirk2000/benchflow:webcanvas-v1"
-        self.results_dir = os.path.abspath("./tmp/webcanvas/results")
-        self.log_files_dir = os.path.abspath("./tmp/webcanvas/log_files")
+    def get_config(self, params: Dict[str, Any]) -> BaseBenchConfig:
+        """
+        Return a WebCanvasConfig instance, validate the input parameters.
+        """
+        return WebCanvasConfig(params)
 
-    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        client = docker.from_env()
-        self._validate_params(params)
-        os.makedirs(self.results_dir, exist_ok=True)
-        os.makedirs(self.log_files_dir, exist_ok=True)
+    def get_image_name(self) -> str:
+        """
+        Return the Docker image name for running the WebCanvas benchmark.
+        """
+        return "kirk2000/benchflow:webcanvas-v1"
 
+    def get_results_dir_in_container(self) -> str:
+        """
+        In the container, the result files will be written to /app/batch_tasks_results
+        (the environment variable RESULTS_DIR can further specify a subdirectory, such as "example").
+        """
+        return "/app/batch_tasks_results"
+
+    def get_log_files_dir_in_container(self) -> str:
+        """
+        In the container, the log files will be written to /app/LOGS
+        """
+        return "/app/LOGS"
+
+    def get_result(self, task_id: str) -> Dict[str, Any]:
+        """
+        Read the result file (assuming the path is: {results_dir}/example/result/result.json),
+        and parse the result dictionary, which requires the is_resolved, score, and message fields.
+        """
+        # Construct the full path to the result file (related to the RESULTS_DIR configuration inside the container)
+        result_file = os.path.join(self.results_dir, "example", "result", "result.json")
+        if not os.path.exists(result_file):
+            return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
         try:
-            container = client.containers.run(
-                image=self.image_name,
-                environment={
-                    "AGENT_URL": agent_url,
-                    "TEST_START_IDX": str(task_id),
-                    "TEST_END_IDX": str(task_id),
-                    "BROWSERBASE_API_KEY": params["browserbase_api_key"],
-                    "GRAPHQL_USERNAME": params["graphql_username"],
-                    "GRAPHQL_PASSWORD": params["graphql_password"],
-                    "OPENAI_API_KEY": params["openai_api_key"],
-                    "RESULTS_DIR": "/app/batch_tasks_results/example"
-                },
-                volumes={
-                    self.results_dir: {
-                        'bind': '/app/batch_tasks_results',
-                        'mode': 'rw'
-                    },
-                    self.log_files_dir: {
-                        'bind': '/app/LOGS',
-                        'mode': 'rw'
-                    }
-                },
-                remove=True,
-                detach=True
-            )
-   
-            output = ""
-            for line in container.logs(stream=True):
-                line_str = line.decode('utf-8')
-                self.logger.info(line_str)
-                output += line_str
-
-            container.wait()
-
-            result_file = os.path.join(self.results_dir, "example", "result", "result.json")
-            if not os.path.exists(result_file):
-                return {
-                    "task_id": str(task_id),
-                    "is_resolved": False,
-                    "score": 0,
-                    "message": {"error": "No results found"}
-                }
-
-            results = self._get_results(result_file)
-
-            return {
-                "task_id": str(task_id),
-                "is_resolved": results["task_success_rate"] > 0.99,
-                "score": results["average_step_score_rate"],
-                "message": {"details": '{' + ', '.join(f'{k}: {v}' for k,v in results.items()) + '}'}
-            }
-
-        except docker.errors.ImageNotFound:
-            return {
-                "task_id": str(task_id),
-                "is_resolved": False,
-                "score": 0,
-                "message": {"error": "Image not found"}
-            }
-  
+            with open(result_file, 'r') as f:
+                data = f.read().strip()
+                try:
+                    results = json.loads(data)
+                except Exception:
+                    # If the direct parsing fails, try simple text replacement and then parsing
+                    data_fixed = data.replace('{', '{"').replace(': ', '": ').replace(', ', ', "')
+                    results = json.loads(data_fixed)
         except Exception as e:
-            return {
-                "task_id": str(task_id),
-                "is_resolved": False,
-                "score": 0,
-                "message": {"error": f"{e}"}
-            }
+            return {"is_resolved": False, "score": 0, "message": {"error": str(e)}}
+        
+        # Calculate whether the benchmark passed and the score based on the parsed results
+        is_resolved = results.get("task_success_rate", 0) > 0.99
+        score = results.get("average_step_score_rate", 0)
+        # Concatenate the result details in key-value pair format
+        message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
+        return {"is_resolved": is_resolved, "score": score, "message": message}
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
-        task_ids = [str(i) for i in range(103)]
+        """
+        Return all task_ids. If split is "train", return 20 task_ids, otherwise return 103 task_ids.
+        """
         if split == "train":
             task_ids = [str(i) for i in range(20)]
+        else:
+            task_ids = [str(i) for i in range(103)]
         return {"task_ids": task_ids, "error_message": None}
 
     def cleanup(self):
+        """
+        Add the logic to clean up the temporary result and log directories.
+        For example, delete the files in self.results_dir and self.log_files_dir.
+        """
         pass
-
-    def _validate_params(self, params: Dict[str, Any]) -> bool:
-        if not params.get("browserbase_api_key"):
-            raise ValueError("Invalid parameters: browserbase_api_key is required")
-        if not params.get("graphql_username"):
-            raise ValueError("Invalid parameters: graphql_username is required")
-        if not params.get("graphql_password"):
-            raise ValueError("Invalid parameters: graphql_password is required")
-        if not params.get("openai_api_key"):
-            raise ValueError("Invalid parameters: openai_api_key is required")
-        return True
-
-    def _get_results(self, results_dir: str) -> Dict[str, Any]:
-        with open(results_dir, 'r') as f:
-            data = f.read().strip()
-            data = data.replace('{', '{"').replace(': ', '": ').replace(', ', ', "')
-            return json.loads(data)
