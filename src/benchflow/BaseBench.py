@@ -67,7 +67,7 @@ class BaseBench(ABC):
         self.docker_client = docker.from_env()
 
     def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        config = self.get_config(params)
+        config = self.get_config(params, task_id)
         config.validate()
 
         bench_name = self.__class__.__name__

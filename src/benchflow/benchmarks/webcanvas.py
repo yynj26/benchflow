@@ -20,10 +20,14 @@ class WebCanvasConfig(BaseBenchConfig):
 # WebCanvasBench implementation
 ##############################################################################
 class WebCanvasBench(BaseBench):
-    def get_config(self, params: Dict[str, Any]) -> BaseBenchConfig:
+    def __init__(self):
+        super().__init__()
+
+    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
         """
         Return a WebCanvasConfig instance, validate the input parameters.
         """
+        params["TEST_END_IDX"] = str(task_id)
         return WebCanvasConfig(params)
 
     def get_image_name(self) -> str:
