@@ -60,6 +60,7 @@ class WebCanvasBench(BaseBench):
         """
         # Construct the full path to the result file (related to the RESULTS_DIR configuration inside the container)
         result_file = os.path.join(self.results_dir, "example", "result", "result.json")
+        log_file = os.path.join(self.log_files_dir, "example", "result", "out.json")
         if not os.path.exists(result_file):
             return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
         try:
@@ -71,6 +72,8 @@ class WebCanvasBench(BaseBench):
                     # If the direct parsing fails, try simple text replacement and then parsing
                     data_fixed = data.replace('{', '{"').replace(': ', '": ').replace(', ', ', "')
                     results = json.loads(data_fixed)
+            with open(log_file, 'r') as f:
+                log = f.read().strip()
         except Exception as e:
             return {"is_resolved": False, "score": 0, "message": {"error": str(e)}}
         
@@ -78,7 +81,8 @@ class WebCanvasBench(BaseBench):
         is_resolved = results.get("task_success_rate", 0) > 0.99
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
-        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task runs successfully."} , "log": ', '.join(f"{k}: {v}" for k, v in results.items())}
+        message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
+        return {"is_resolved": is_resolved, "score": score, "message": message, "log": log}
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """
