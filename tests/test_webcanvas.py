@@ -9,14 +9,14 @@ bench = load_benchmark(benchmark_name="webcanvas")
 your_agents = WebcanvasAgent()
 
 params = {
-   "browserbase_api_key": os.environ.get("BROWSERBASE_API_KEY"),
-   "graphql_username": os.environ.get("GRAPHQL_USERNAME"), 
-   "graphql_password": os.environ.get("GRAPHQL_PASSWORD"),
-   "openai_api_key": os.environ.get("OPENAI_API_KEY")
+   "BROWSERBASE_API_KEY": os.environ.get("BROWSERBASE_API_KEY"),
+   "GRAPHQL_USERNAME": os.environ.get("GRAPHQL_USERNAME"), 
+   "GRAPHQL_PASSWORD": os.environ.get("GRAPHQL_PASSWORD"),
+   "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY")
 }
 
 run_ids = bench.run(
-    task_ids=[0],
+    task_ids=[1],
     agents=your_agents,
     requirements_dir = "webcanvas_requirements.txt",
     api={"OPENAI_API_KEY": os.getenv("OPENAI_API_KEY")},
