@@ -60,7 +60,7 @@ class WebCanvasBench(BaseBench):
         """
         # Construct the full path to the result file (related to the RESULTS_DIR configuration inside the container)
         result_file = os.path.join(self.results_dir, "example", "result", "result.json")
-        log_file = os.path.join(self.log_files_dir, "example", "result", "out.json")
+        log_file = os.path.join(self.results_dir, "example", "result", "out.json")
         print(result_file)
         if not os.path.exists(result_file):
             return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
