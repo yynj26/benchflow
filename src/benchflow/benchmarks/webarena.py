@@ -10,7 +10,7 @@ from benchflow import BaseBench, BaseBenchConfig
 # For WebArenaBench no extra environment variables are required.
 # ------------------------------------------------------------------------------
 class WebArenaConfig(BaseBenchConfig):
-    required_env = []   # No required env variables for WebArenaBench
+    required_env = ["TEST_END_IDX"]   # No required env variables for WebArenaBench
     optional_env = []
     defaults = {
         "RESULTS_DIR": "/app/results"

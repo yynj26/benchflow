@@ -145,6 +145,8 @@ class BaseBench(ABC):
     
     @abstractmethod
     def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+        # Benchmark need to deal with the END_IDX so that it can only run one task at a time
+        # task_id is the start index of the task
         pass
 
     @abstractmethod
