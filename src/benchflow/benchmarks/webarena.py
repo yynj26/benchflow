@@ -66,7 +66,7 @@ class WebArenaBench(BaseBench):
                 for line in f:
                     log_path = os.path.basename(line.strip())
                     # Assume the log file path is relative to the parent directory of results_dir
-                    full_log_path = os.path.join(os.path.dirname(self.results_dir), log_path)
+                    full_log_path = os.path.join(os.path.dirname(self.log_files_dir), log_path)
                     with open(full_log_path, 'r') as log_file:
                         log_content += log_file.read() + "\n"
         except Exception as e:
