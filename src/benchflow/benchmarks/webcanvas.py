@@ -74,6 +74,8 @@ class WebCanvasBench(BaseBench):
                     results = json.loads(data_fixed)
             with open(log_file, 'r') as f:
                 log = f.read().strip()
+                print(log)
+                print(str(log))
         except Exception as e:
             return {"is_resolved": False, "score": 0, "message": {"error": str(e)}}
         
@@ -82,7 +84,7 @@ class WebCanvasBench(BaseBench):
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
         message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
-        return {"is_resolved": is_resolved, "score": score, "message": message, "log": log}
+        return {"is_resolved": is_resolved, "score": score, "message": message, "log": str(log)}
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

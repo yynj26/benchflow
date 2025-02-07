@@ -29,13 +29,13 @@ class Bench:
         signal.signal(signal.SIGINT, self._handle_exit)
         signal.signal(signal.SIGTERM, self._handle_exit)
         
-    def run(self, task_ids: Union[str|int, List[str|int]], 
-            agents: Union[BaseAgent, List[BaseAgent]], 
+    def run(self, agents: Union[BaseAgent, List[BaseAgent]], 
             requirements_dir: str, 
             install_sh: str = None, 
             api: Dict[str, str] = None, 
             require_gpu: bool = False, 
-            params: Dict[str, Any] = {}):
+            params: Dict[str, Any] = {},
+            task_ids: Union[str|int, List[str|int], None] = None):
         
         if isinstance(task_ids, str|int):
             task_ids = [str(task_ids)]
@@ -140,6 +140,12 @@ class Bench:
             logger.error(f"Task {task_id} error detail: {error_detail}")
             self.results[task_id] = "failed"
             return task_id
+    
+    def _get_all_task_ids(self) -> List[str]:
+        payload = {}
+        response = requests.post(f"{self.benchmark_url}/api/v1/{self.benchmark_name}/get_all_tasks", json=payload)
+        response.raise_for_status()
+        return response.json()
         
     def _get_agent_code(self, agent: BaseAgent) -> str:
         agent_file = sys.modules[agent.__class__.__module__].__file__
