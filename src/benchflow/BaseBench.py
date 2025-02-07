@@ -75,8 +75,8 @@ class BaseBench(ABC):
 
         bench_name = self.__class__.__name__
         timestamp = str(time.time())
-        self.results_dir = f"./tmp/{bench_name}/results/{timestamp}/{task_id}"
-        self.log_files_dir = f"./tmp/{bench_name}/logs/{timestamp}/{task_id}"
+        self.results_dir = os.path.abspath(f"./tmp/{bench_name}/results/{timestamp}/{task_id}")
+        self.log_files_dir = os.path.abspath(f"./tmp/{bench_name}/logs/{timestamp}/{task_id}")
         os.makedirs(self.results_dir, exist_ok=True)    
         os.makedirs(self.log_files_dir, exist_ok=True)
 
