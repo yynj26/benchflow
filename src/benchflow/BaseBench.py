@@ -85,6 +85,7 @@ class BaseBench(ABC):
             "AGENT_URL": agent_url,
             "TEST_START_IDX": str(task_id),
         })
+        print(env)
 
         try:
             container = self.docker_client.containers.run(
@@ -143,7 +144,7 @@ class BaseBench(ABC):
         return True
     
     @abstractmethod
-    def get_config(self, params: Dict[str, Any]) -> BaseBenchConfig:
+    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
         pass
 
     @abstractmethod
