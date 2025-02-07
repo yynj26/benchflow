@@ -67,9 +67,8 @@ class WebArenaBench(BaseBench):
                     log_path = line.strip()
                     # Assume the log file path is relative to the parent directory of results_dir
                     full_log_path = os.path.join(os.path.dirname(self.results_dir), log_path)
-                    if os.path.exists(full_log_path):
-                        with open(full_log_path, 'r') as log_file:
-                            log_content += log_file.read() + "\n"
+                    with open(full_log_path, 'r') as log_file:
+                        log_content += log_file.read() + "\n"
         except Exception as e:
             return {"is_resolved": False, "score": 0, "message": {"error": f"Failed to read log files: {e}"}}
         
@@ -86,7 +85,7 @@ class WebArenaBench(BaseBench):
                 if "(PASS)" in line:
                     is_resolved = True
                     
-        return {"is_resolved": is_resolved, "score": score, "message": {"details": log_content}}
+        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task is successful. Use bench.get_result(task_id) to get the logs"}, "log": log_content}
     
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """
