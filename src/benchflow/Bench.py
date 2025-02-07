@@ -36,8 +36,9 @@ class Bench:
             require_gpu: bool = False, 
             params: Dict[str, Any] = {},
             task_ids: Union[str|int, List[str|int], None] = None):
-        
-        if isinstance(task_ids, str|int):
+        if task_ids is None:
+            task_ids = self._get_all_task_ids()
+        elif isinstance(task_ids, str|int):
             task_ids = [str(task_ids)]
         if isinstance(agents, BaseAgent):
             agents = [agents]
@@ -142,10 +143,12 @@ class Bench:
             return task_id
     
     def _get_all_task_ids(self) -> List[str]:
+        logger.info(f"Getting all task ids for {self.benchmark_name}")
         payload = {}
-        response = requests.post(f"{self.benchmark_url}/api/v1/{self.benchmark_name}/get_all_tasks", json=payload)
+        response = requests.post(f"{self.benchmark_url}/api/v1/{self.benchmark_name}/tasks", json=payload)
         response.raise_for_status()
-        return response.json()
+        print(response.json()["task_ids"])
+        return response.json()["task_ids"]
         
     def _get_agent_code(self, agent: BaseAgent) -> str:
         agent_file = sys.modules[agent.__class__.__module__].__file__
