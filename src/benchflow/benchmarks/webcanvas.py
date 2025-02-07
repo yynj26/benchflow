@@ -10,7 +10,7 @@ from benchflow import BaseBench, BaseBenchConfig
 #------------------------------------------------------------------------------
 class WebCanvasConfig(BaseBenchConfig):
     # These envs are required by the benchmark, and should be provided by the user.
-    required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"]
+    required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY", "TEST_END_IDX"]
     # These envs are optional, and will use the default value if not provided.
     optional_env = []
     # These envs are defaults, and will be used if not provided.
@@ -29,6 +29,8 @@ class WebCanvasBench(BaseBench):
         """
         Return a WebCanvasConfig instance, validate the input parameters.
         """
+        # Benchmark need to deal with the END_IDX so that it can only run one task at a time
+        # task_id is the start index of the task
         params["TEST_END_IDX"] = str(task_id)
         return WebCanvasConfig(params)
 
