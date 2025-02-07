@@ -1,10 +1,30 @@
-# 🚀 BenchFlow: AI Benchmark Runtime
+# BenchFlow: AI Benchmark Runtime
 
-## 📦 Installation
+BenchFlow is an AI benchmark runtime framework that allows you to integrate and evaluate AI tasks using Docker-based benchmarks. The latest version leverages a new **BaseBench** design to manage logs, results, and environment variable configurations consistently.
 
-### Requirements
+---
+
+## Table of Contents
+
+- [Installation Requirements](#installation-requirements)
+- [Agent Development Guide](#agent-development-guide)
+  - [Step 1: Define Your Agent](#step-1-define-your-agent)
+  - [Step 2: Test Your Agent](#step-2-test-your-agent)
+- [Benchmark Integration Guide](#benchmark-integration-guide)
+  - [Step 1: Implement BenchClient](#step-1-implement-benchclient)
+  - [Step 2: Package and Upload Your Benchmark Docker Image](#step-2-package-and-upload-your-benchmark-docker-image)
+  - [Step 3: Integrate Your Benchmark](#step-3-integrate-your-benchmark)
+- [API Reference](#api-reference)
+- [License](#license)
+
+---
+
+## Installation Requirements
+
 - **Python 3.11+**
-- Docker (for benchmark integration)
+- Docker
+
+Install the BenchFlow package using pip:
 
 ```bash
 pip install benchflow
@@ -12,9 +32,11 @@ pip install benchflow
 
 ---
 
-## 🤖 Agent Development Guide
+## Agent Development Guide
 
-### ➤ Step 1: Define Your Agent
+### Step 1: Define Your Agent
+
+Create your Agent by extending `BaseAgent`. The Agent processes the environment data provided via `self.env_info` and generates a solution for the task.
 
 ```python
 from benchflow import BaseAgent
@@ -25,21 +47,18 @@ class YourAgent(BaseAgent):
     
     def call_api(self) -> str:
         """
-        IMPLEMENTATION CONTRACT
-        Process environment data and generate task solution
-        
+        IMPLEMENTATION CONTRACT:
+        Process environment data and generate task solution.
+
         Access:
         - self.env_info: dict containing benchmark-specific data
-        
+
         Returns:
-        str: Unified diff patch for code tasks
+            str: Unified diff patch or any prediction as a formatted string.
         """
         # Access task parameters
         instance_id = self.env_info['instance_id']
-        # You can deal with the data provided in the `env_info` here and 
-        # return your prediction(could be a patch action or anything else)
-
-        # Example: return a patch for SWE-Bench
+        # Process the data provided in `env_info` and return your prediction
         return (
             "diff --git a/src/rules/L031.py b/src/rules/L031.py\n"
             "--- a/src/rules/L031.py\n"
@@ -56,26 +75,21 @@ class YourAgent(BaseAgent):
         )
 ```
 
-#### 🔑 Key Requirements
-- ✅ Maintain agent logic in a single file
-- ✅ Return predictions as formatted strings
-- ✅ Access benchmark data through `self.env_info`
+### Step 2: Test Your Agent
 
----
-
-### ➤ Step 2: Test Your Agent
+Test your Agent with the benchmark by loading the benchmark module and running the evaluation.
 
 ```python
 from benchflow import load_benchmark
 from your_agent import YourAgent
 
-# Initialize benchmark
+# Initialize the benchmark (for example, "SWE-Bench")
 bench = load_benchmark("SWE-Bench")
 
-# Configure agent
+# Instantiate your agent
 agent = YourAgent()
 
-# Execution parameters
+# Define execution parameters
 config = {
     "task_ids": ["astropy__astropy-12907"],
     "agents": agent,
@@ -84,23 +98,19 @@ config = {
     "api": {"OPENAI_API_KEY": "your_api_key_here"}
 }
 
-# Run evaluation
+# Run the evaluation
 results = bench.run(**config)
 ```
 
-#### ⚙️ Configuration Options
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `task_ids` | List[str] | Benchmark tasks to evaluate |
-| `install_sh_dir` | str | Environment setup script path |
-| `requirements_dir` | str | Python dependencies file path |
-| `api` | Dict[str, str] | Required API credentials |
-
 ---
 
-## 🧪 Benchmark Integration Guide
+## Benchmark Integration Guide
 
-### ➤ Step 1: Implement BenchClient
+The Benchmark Integration Guide now comprises three steps:
+
+### Step 1: Implement BenchClient
+
+Create a class extending `BenchClient` to transform the raw state into the agent's input and parse the agent's output.
 
 ```python
 from benchflow import BenchClient
@@ -108,7 +118,7 @@ from typing import Dict, Any
 
 class YourClient(BenchClient):
     def prepare_environment(self, state_update: Dict) -> Dict:
-        """Transform raw state to agent inputs"""
+        """Transform raw state into agent inputs."""
         return {
             "env_info": {
                 "observation": state_update["trajectory"][-1],
@@ -117,93 +127,204 @@ class YourClient(BenchClient):
         }
     
     def parse_action(self, raw_action: str) -> str:
-        """Process agent responses"""
-        parsed_action = raw_action # or you can do some post-processing here
+        """Process the agent response."""
+        parsed_action = raw_action  # Optionally add post-processing here
         return parsed_action
 ```
 
-#### 🔄 Processing Workflow
-1. **Input Transformation**  
-   `prepare_environment()` handles state conversion, you should wrap the raw state into a dict with key `env_info`
-   
-2. **Output Parsing**  
-   `parse_action()` processes agent responses, you should return the results as a string
+### Step 2: Package and Upload Your Benchmark Docker Image
 
----
+Before integrating your benchmark, ensure that you have:
 
-### ➤ Step 2: Create Benchmark Docker Image
+- Packaged your benchmark logic into a Docker image.
+- Configured the image to read required environment variables (such as `AGENT_URL`, `TEST_START_IDX`, etc.).
+- Uploaded the Docker image to a public registry (e.g., DockerHub).
+
+For example, tag your image as `yourusername/benchmark-name:tag`. No code snippet is required for this step.
+
+### Step 3: Integrate Your Benchmark
+
+Integrate your benchmark by subclassing **BaseBench**. In the new implementation, you must implement the following abstract methods:
+
+- **`get_config(params: Dict[str, Any], task_id: str) -> BaseBenchConfig`**  
+  Returns a configuration instance (derived from `BaseBenchConfig`) to validate and prepare environment variables.
+
+- **`get_image_name() -> str`**  
+  Returns the Docker image name for running the benchmark.
+
+- **`get_results_dir_in_container() -> str`**  
+  Returns the directory inside the container where results will be stored.
+
+- **`get_log_files_dir_in_container() -> str`**  
+  Returns the directory inside the container where log files will be stored.
+
+- **`get_result(task_id: str) -> Dict[str, Any]`**  
+  Reads and parses the benchmark results (for example, from log files) and returns a dictionary containing:
+  - `task_id`
+  - `is_resolved` (a boolean indicating success)
+  - `score` (a numerical score)
+  - `message` (a dictionary with details or error messages)
+  - `log` (log details as a string)
+
+- **`get_all_tasks(split: str) -> Dict[str, Any]`**  
+  Returns all available task IDs and an optional error message.
+
+- **`cleanup()`**  
+  Cleans up any temporary resources created during benchmark execution.
+
+Below is an example integration using **WebArenaBench**:
 
 ```python
-from benchflow import BaseBench
-import docker
+# webarena_bench.py
+import os
+import subprocess
+from typing import Any, Dict
 
-class YourBench(BaseBench):
+from benchflow import BaseBench, BaseBenchConfig
+
+# ------------------------------------------------------------------------------
+# WebArenaConfig: Define the configuration for WebArenaBench.
+# ------------------------------------------------------------------------------
+class WebArenaConfig(BaseBenchConfig):
+    # For this benchmark, we require the TEST_END_IDX variable.
+    required_env = ["TEST_END_IDX"]
+    optional_env = []
+    defaults = {
+        "RESULTS_DIR": "/app/results"
+    }
+
+# ------------------------------------------------------------------------------
+# WebArenaBench Implementation
+# ------------------------------------------------------------------------------
+class WebArenaBench(BaseBench):
     def __init__(self):
         super().__init__()
-        # You should upload your benchmark image to a public registry and 
-        # set the image_name to the image name
-        self.image_name = "your_image_name"
 
-    def run_bench(self, task_id, agent_url, params):
-        # Run benchmark in Docker container
-        container = docker.from_env().containers.run(
-            image="your-bench-image",
-            environment={
-                    "AGENT_URL": agent_url,
-                    "TEST_START_IDX": str(task_id),
-                    "TEST_END_IDX": str(int(task_id) + 1),
-                    "BROWSERBASE_API_KEY": params["browserbase_api_key"],
-                    "GRAPHQL_USERNAME": params["graphql_username"],
-                    "GRAPHQL_PASSWORD": params["graphql_password"],
-                    "OPENAI_API_KEY": params["openai_api_key"],
-                    "RESULTS_DIR": "/app/batch_tasks_results/example"
-                },
-            volumes={...},
-            detach=True
-        )
+    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+        """
+        Return a WebArenaConfig instance that validates the input parameters.
+        Here, we set TEST_END_IDX so that each run processes only one task.
+        """
+        params["TEST_END_IDX"] = str(int(task_id) + 1)
+        return WebArenaConfig(params)
+    
+    def get_image_name(self) -> str:
+        """
+        Return the Docker image name for running the WebArena benchmark.
+        """
+        return "kirk2000/benchflow:webarena-v1"
+    
+    def get_results_dir_in_container(self) -> str:
+        """
+        Return the directory inside the container where benchmark results will be stored.
+        """
+        return "/app/results"
+    
+    def get_log_files_dir_in_container(self) -> str:
+        """
+        Return the directory inside the container where log files will be stored.
+        """
+        return "/app/log_files"
+    
+    def get_result(self, task_id: str) -> Dict[str, Any]:
+        """
+        Read and parse the benchmark result from log files.
+        This method expects a file named 'log_files.txt' in the results directory.
+        It reads the content of each log file listed, aggregates the logs, and extracts
+        the average score and pass status.
+        """
+        log_files_txt = os.path.join(self.results_dir, "log_files.txt")
+        if not os.path.exists(log_files_txt):
+            return {
+                "is_resolved": False,
+                "score": 0,
+                "message": {"error": "No results found"},
+                "log": ""
+            }
         
-        # Process results
+        log_content = ""
+        try:
+            with open(log_files_txt, 'r') as f:
+                for line in f:
+                    log_file_name = os.path.basename(line.strip())
+                    # Assume log files are located in the log_files directory under the task_id folder.
+                    full_log_path = os.path.join(self.log_files_dir, str(task_id), log_file_name)
+                    with open(full_log_path, 'r') as log_file:
+                        log_content += log_file.read() + "\n"
+        except Exception as e:
+            return {
+                "is_resolved": False,
+                "score": 0,
+                "message": {"error": f"Failed to read log files: {e}"},
+                "log": log_content
+            }
+        
+        # Parse the log content to extract score and resolution status.
+        is_resolved = False
+        score = 0.0
+        for line in log_content.splitlines():
+            if "Average score:" in line:
+                try:
+                    score = float(line.split(":")[-1].strip())
+                except ValueError:
+                    score = 0.0
+            if "[Result]" in line and "(PASS)" in line:
+                is_resolved = True
+                    
         return {
-            "task_id": task_id,
-            "score": calculate_score(),
-            "is_resolved": success_flag,
-            "message": {'log': 'logs of the task', 'error': 'some error message if the task is not resolved'}
+            "is_resolved": is_resolved,
+            "score": score,
+            "message": {"details": "Task runs successfully."},
+            "log": log_content
         }
+    
+    def get_all_tasks(self, split: str) -> Dict[str, Any]:
+        """
+        Return a dictionary containing all task IDs and an optional error message.
+        For the 'train' split, return 200 tasks; for other splits, return 812 tasks.
+        """
+        if split == "train":
+            task_ids = [str(i) for i in range(200)]
+        else:
+            task_ids = [str(i) for i in range(812)]
+        return {"task_ids": task_ids, "error_message": None}
+    
+    def cleanup(self):
+        """
+        Clean up benchmark resources by removing local results and log directories.
+        """
+        if os.path.exists(self.results_dir):
+            self.logger.info(f"Removing {self.results_dir}")
+            subprocess.run(['sudo', 'rm', '-rf', self.results_dir], check=True)
+        if os.path.exists(self.log_files_dir):
+            self.logger.info(f"Removing {self.log_files_dir}")
+            subprocess.run(['sudo', 'rm', '-rf', self.log_files_dir], check=True)
 ```
 
-**Key Requirements**:
-- Package your benchmark as Docker image
-- Using ENV variables to pass the args to the benchmark
-- Must return a dict with the following keys: `task_id`, `score`, `is_resolved`, `message`
-
-#### 🐳 Docker Requirements
-| ENV Variable | Purpose |
-|--------------|---------|
-| `AGENT_URL` | Agent service endpoint |
-| `TASK_ID` | Task identifier |
-| `API_KEYS` | JSON string of credentials |
-
 ---
 
-## 📚 API Reference
+## API Reference
 
-### 🔧 BaseAgent Class
+### BaseBench Class
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `call_api` | `self.env_info: Dict` | `str` | Core task processing method |
+| `run_bench(task_id: str, agent_url: str, params: Dict[str, Any])` | `task_id`: Task identifier<br>`agent_url`: Agent service endpoint<br>`params`: Runtime parameters dictionary | `Dict[str, Any]` | Runs the benchmark inside a Docker container, captures logs, and returns the execution result. |
+| `format_result(...)` | See implementation | `Dict[str, Any]` | Formats the benchmark result to include `task_id`, `is_resolved`, `score`, `message`, and `log`. |
+| `get_volumes()` | None | `Dict[str, Dict[str, str]]` | Defines Docker volume mappings for results and log directories. |
+| `validate_result(result: Dict[str, Any])` | `result`: Result dictionary | `bool` | Validates that the benchmark result contains all required fields. |
+| _Abstract Methods_ | See documentation | — | Must be implemented in your subclass: `get_config()`, `get_image_name()`, `get_results_dir_in_container()`, `get_log_files_dir_in_container()`, `get_result()`, `get_all_tasks()`, and `cleanup()`. |
 
-### 🔌 BenchClient Class
+### BaseBenchConfig Class
 
-| Method | Input | Output | Description |
-|--------|-------|--------|-------------|
-| `prepare_environment` | `Dict` | `Dict` | State conversion |
-| `parse_action` | `str` | `str` | Response processing |
-
-### 🧪 BaseBench Class
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `run_bench` | `task_id: str`, `agent_url: str`, `params: Dict` | `Dict` | Benchmark execution |
+Used to define and validate the environment variables required for benchmark execution. Extend this class to customize the configuration by overriding `required_env`, `optional_env`, and `defaults`.
 
 ---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+By following these steps, you can quickly implement and integrate your own AI benchmarks using the latest version of **BaseBench**. If you have any questions or suggestions, please feel free to submit an issue or pull request.
