@@ -77,7 +77,7 @@ class WebCanvasBench(BaseBench):
                 log = f.read().strip()
                 print(log)
         except Exception as e:
-            return {"is_resolved": False, "score": 0, "message": {"error": str(e)}}
+            return {"is_resolved": False, "score": 0, "message": {"error": e}}
         
         # Calculate whether the benchmark passed and the score based on the parsed results
         is_resolved = results.get("task_success_rate", 0) > 0.99
