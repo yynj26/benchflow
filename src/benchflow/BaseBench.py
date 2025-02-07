@@ -85,7 +85,6 @@ class BaseBench(ABC):
             "AGENT_URL": agent_url,
             "TEST_START_IDX": str(task_id),
         })
-        print(env)
 
         try:
             container = self.docker_client.containers.run(
@@ -105,7 +104,7 @@ class BaseBench(ABC):
             result = self.get_result(task_id)
             if not self.validate_result(result):
                 return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(result)})
-
+            print(result)
             return self.format_result(task_id, result["is_resolved"], result["score"], result["message"], result["log"])
         except docker.errors.ImageNotFound:
             return self.format_result(task_id, False, 0, {"error": "Image not found"})
