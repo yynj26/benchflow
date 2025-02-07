@@ -14,7 +14,9 @@ class WebCanvasConfig(BaseBenchConfig):
     # These envs are optional, and will use the default value if not provided.
     optional_env = []
     # These envs are defaults, and will be used if not provided.
-    defaults = {}
+    defaults = {
+        "RESULTS_DIR": "/app/batch_tasks_results/example"
+    }
 
 #------------------------------------------------------------------------------
 # WebCanvasBench implementation
