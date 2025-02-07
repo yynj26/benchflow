@@ -64,7 +64,7 @@ class WebArenaBench(BaseBench):
         try:
             with open(log_files_txt, 'r') as f:
                 for line in f:
-                    log_path = line.strip()
+                    log_path = os.path.basename(line.strip())
                     # Assume the log file path is relative to the parent directory of results_dir
                     full_log_path = os.path.join(os.path.dirname(self.results_dir), log_path)
                     with open(full_log_path, 'r') as log_file:
