@@ -5,9 +5,9 @@ from typing import Any, Dict
 
 from benchflow import BaseBench, BaseBenchConfig
 
-##############################################################################
+#------------------------------------------------------------------------------
 # Custom configuration: Define the environment variables and validation rules for WebCanvasBench
-##############################################################################
+#------------------------------------------------------------------------------
 class WebCanvasConfig(BaseBenchConfig):
     # These envs are required by the benchmark, and should be provided by the user.
     required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"]
@@ -16,9 +16,9 @@ class WebCanvasConfig(BaseBenchConfig):
     # These envs are defaults, and will be used if not provided.
     defaults = {}
 
-##############################################################################
+#------------------------------------------------------------------------------
 # WebCanvasBench implementation
-##############################################################################
+#------------------------------------------------------------------------------
 class WebCanvasBench(BaseBench):
     def __init__(self):
         super().__init__()

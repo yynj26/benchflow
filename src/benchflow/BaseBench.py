@@ -56,8 +56,11 @@ class BaseBenchConfig:
     def get_env(self) -> Dict[str, str]:
         env = {}
         for key in self.required_env + self.optional_env:
-            value = self.params.get(key, self.defaults.get(key))
+            value = self.params.get(key)
             if value is not None:
+                env[key] = str(value)
+        for key, value in self.defaults.items():
+            if key not in env:
                 env[key] = str(value)
         return env
 
