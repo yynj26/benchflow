@@ -85,7 +85,7 @@ class WebArenaBench(BaseBench):
                 if "(PASS)" in line:
                     is_resolved = True
                     
-        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task is successful. Use bench.get_result(task_id) to get the logs"}, "log": log_content}
+        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task runs successfully. Use get_result(task_id) to get the logs"}, "log": log_content}
     
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """
