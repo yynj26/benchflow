@@ -6,7 +6,8 @@ BenchFlow is an AI benchmark runtime framework that allows you to integrate and 
 
 ## Table of Contents
 
-- [Installation Requirements](#installation-requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
 - [Agent Development Guide](#agent-development-guide)
   - [Step 1: Define Your Agent](#step-1-define-your-agent)
   - [Step 2: Test Your Agent](#step-2-test-your-agent)
@@ -19,7 +20,7 @@ BenchFlow is an AI benchmark runtime framework that allows you to integrate and 
 
 ---
 
-## Installation Requirements
+## Installation
 
 - **Python 3.11+**
 - Docker
@@ -28,6 +29,41 @@ Install the BenchFlow package using pip:
 
 ```bash
 pip install benchflow
+```
+
+---
+
+## Quick Start
+
+Supported Benchmarks:
+- WebArena
+- WebCanvas
+- SWE-Bench (coming in version 0.1.6)
+
+You can try our demo by running the following command:
+
+```bash
+git clone https://github.com/benchflow-ai/benchflow.git
+cd benchflow
+pip install -e .
+```
+
+Test Default WebArena Agent on WebArena:
+```bash
+cd tests
+python test_webarena.py
+```
+
+Test Default WebCanvas Agent on WebCanvas:
+```bash
+cd tests
+python test_webcanvas.py
+```
+
+Test Default SWEAgent on SWEBench:
+```bash
+cd tests
+python test_swebench.py
 ```
 
 ---
@@ -78,7 +114,9 @@ class YourAgent(BaseAgent):
 ### Step 2: Test Your Agent
 
 Test your Agent with the benchmark by loading the benchmark module and running the evaluation.
+Agent will be host in container, you can add any python dependencies in a `requirements.txt`-like file or any other install steps in a shell script `install.sh` and it will be installed in the container. You can specify the directory of the requirements in the `requirements_dir` parameter and the directory of the install scripts in the `install_dir` parameter. If your agent need some environment variables, you can specify them in the `api` parameter. For example, {"OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"). "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY")}
 Here is an example of testing your agent with the WebCanvas benchmark:
+
 ```python
 from benchflow import load_benchmark
 from webcanvas_openai import WebcanvasAgent
@@ -87,6 +125,11 @@ bench = load_benchmark(benchmark_name="webcanvas")
 
 your_agents = WebcanvasAgent()
 
+# There are four requirements for WebCanvas:
+# 1. BROWSERBASE_API_KEY: you can get it from https://browserbase.com/
+# 2. GRAPHQL_USERNAME: you can register on the platform at https://www.imean.ai/web-canvas.
+# 3. GRAPHQL_PASSWORD: you can register on the platform at https://www.imean.ai/web-canvas.
+# 4. OPENAI_API_KEY: your api key of the openai
 params = {
    "BROWSERBASE_API_KEY": os.environ.get("BROWSERBASE_API_KEY"),
    "GRAPHQL_USERNAME": os.environ.get("GRAPHQL_USERNAME"), 
