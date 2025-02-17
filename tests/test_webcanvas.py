@@ -1,9 +1,9 @@
 import os
-
+import json
 from benchflow import load_benchmark
 from benchflow.agents.webcanvas_openai import WebcanvasAgent
 
-bench = load_benchmark(benchmark_name="webcanvas")
+bench = load_benchmark(benchmark_name="webcanvas", bf_token=os.getenv("BFF_TOKEN"))
 
 your_agents = WebcanvasAgent()
 
@@ -15,9 +15,9 @@ params = {
 }
 
 run_ids = bench.run(
-    task_ids=[1],
+    task_ids=[0,1],
     agents=your_agents,
-    requirements_dir = "webcanvas_requirements.txt",
+    requirements_txt = "webcanvas_requirements.txt",
     api={"OPENAI_API_KEY": os.getenv("OPENAI_API_KEY")},
     params=params
 )
