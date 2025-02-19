@@ -371,21 +371,21 @@ class WebcanvasAgent(BaseAgent):
         self.url = 'https://api.langbase.com/v1/pipes/run'
         self.api_key = os.getenv('LANGBASE_API_KEY')
 
-    def _construct_message(self) -> str:
+    def _construct_message(self, env_info) -> str:
         messages = PlanningPromptConstructor().construct(
-            self.env_info['task_name'], 
-            self.env_info['previous_trace'], 
-            self.env_info['observation'], 
-            self.env_info['feedback'], 
-            self.env_info['status_description'])
+            env_info['task_name'], 
+            env_info['previous_trace'], 
+            env_info['observation'], 
+            env_info['feedback'], 
+            env_info['status_description'])
         message = messages[1]['content']
         return message
  
     def _extract_action(self, response: str) -> str:
         pass
  
-    def call_api(self) -> str:
-        message = self._construct_message()
+    def call_api(self, env_info) -> str:
+        message = self._construct_message(env_info)
         data = {
             'messages': [{'role': 'user', 'content': message}],
             'stream': False

@@ -19,9 +19,9 @@ class WebarenaAgent(BaseAgent):
         self.api_key = os.getenv("LANGBASE_API_KEY")
         self.url = "https://api.langbase.com/v1/pipes/run"
  
-    def _construct_message(self) -> str:
+    def _construct_message(self, env_info) -> str:
         # Deserialize observation to original format for API call
-        return f"""OBSERVATION: {self.env_info['observation']["text"]} URL: {self.env_info['url']} OBJECTIVE: {self.env_info['intent']} PREVIOUS ACTION: {self.env_info['previous_action'] }"""
+        return f"""OBSERVATION: {env_info['observation']["text"]} URL: {env_info['url']} OBJECTIVE: {env_info['intent']} PREVIOUS ACTION: {env_info['previous_action'] }"""
  
     def _extract_action(self, response: str) -> str:
         # find the first occurence of action
@@ -35,8 +35,8 @@ class WebarenaAgent(BaseAgent):
                 f'Cannot find the action in "{response}"'
             )
  
-    def call_api(self) -> str:
-        message = self._construct_message()
+    def call_api(self, env_info) -> str:
+        message = self._construct_message(env_info)
         print(message)
         data = {
             'messages': [{'role': 'user', 'content': message}],
