@@ -1,4 +1,4 @@
 json5
 jinja2
 openai
-benchflow
+benchflow>=0.1.7

@@ -1,1 +1,1 @@
-benchflow>=0.1.5
+benchflow>=0.1.7
