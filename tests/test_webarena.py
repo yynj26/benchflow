@@ -3,7 +3,7 @@ import os
 from benchflow import load_benchmark
 from benchflow.agents.webarena_openai import WebarenaAgent
 
-bench = load_benchmark(benchmark_name="webarena", bf_token=os.getenv("BFF_TOKEN"))
+bench = load_benchmark(benchmark_name="webarena", bf_token=os.getenv("BF_TOKEN"))
 
 your_agents = WebarenaAgent()
 

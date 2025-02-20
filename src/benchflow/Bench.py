@@ -5,9 +5,7 @@ import sys
 import time
 import threading
 from typing import Any, Dict, List, Union
-
 import requests
-from requests.exceptions import HTTPError
 
 from .BaseAgent import BaseAgent
 
@@ -101,11 +99,17 @@ class Bench:
             logger.info(f"Tasks {task_ids} started successfully, job_id: {job_id}")
             return job_id
         
+        except requests.exceptions.HTTPError as http_err:
+            detail = http_err.response.json()
+            logger.error(f"Task execution failed: {str(http_err)}, detail: {detail}")
         except Exception as e:
             logger.error(f"Task execution failed: {str(e)}")
         return None
 
     def get_results(self, job_ids: List[str]):
+        """
+        Get and download the results from the BFF.
+        """
         results = {}
         jobs = set(job_ids)
         headers = {"x-bf-api-key": self.bf_token}
@@ -136,8 +140,7 @@ class Bench:
         for job_id in job_ids:
             result_file = self.results_dir / f"{job_id}.json"
             result_file.write_text(json.dumps(results[job_id]))
-            
-        logger.info(f"Results saved to {self.results_dir}")
+            logger.info(f"Results saved to {result_file}")
         return results
     
     def _get_agent_code(self, agent: BaseAgent) -> str:

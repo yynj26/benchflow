@@ -1,2 +1,2 @@
 openai
-benchflow>=0.1.2
+benchflow>=0.1.7

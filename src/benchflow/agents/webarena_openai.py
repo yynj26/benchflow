@@ -73,12 +73,12 @@ To be successful, it is very important to follow the following rules:
             """Let's think step-by-step. This page has a search box whose ID is [164]. According to the nominatim rule of openstreetmap, I can search for the restaurants near a location by \"restaurants near\". I can submit my typing by pressing the Enter afterwards. In summary, the next action I will perform is ```type [164] [restaurants near CMU] [1]```"""
         )
 
-    def _construct_message(self):
+    def _construct_message(self, env_info):
         return (
-            f"OBSERVATION: {self.env_info['observation']['text']} "
-            f"URL: {self.env_info['url']} "
-            f"OBJECTIVE: {self.env_info['intent']} "
-            f"PREVIOUS ACTION: {self.env_info['previous_action']}"
+            f"OBSERVATION: {env_info['observation']['text']} "
+            f"URL: {env_info['url']} "
+            f"OBJECTIVE: {env_info['intent']} "
+            f"PREVIOUS ACTION: {env_info['previous_action']}"
         )
 
     def _extract_action(self, response):
@@ -88,13 +88,13 @@ To be successful, it is very important to follow the following rules:
             return match.group(1).strip()
         raise Exception(f'Cannot find the action in "{response}"')
 
-    def call_api(self):
+    def call_api(self, env_info):
         system_msg_1 = {"role": "system", "content": self.system_instruction}
         user_msg_1 = {"role": "system", "name": "example_user", "content": self.example1_user}
         system_msg_2 = {"role": "system", "name": "example_assistant", "content": self.example1_assistant}
         user_msg_2 = {"role": "system", "name": "example_user", "content": self.example2_user}
         system_msg_3 = {"role": "system", "name": "example_assistant", "content": self.example2_assistant}
-        user_msg_final = {"role": "user", "content": self._construct_message()}
+        user_msg_final = {"role": "user", "content": self._construct_message(env_info)}
 
         messages = [
             system_msg_1,
