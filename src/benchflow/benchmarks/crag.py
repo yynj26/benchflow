@@ -7,11 +7,9 @@ from benchflow import BaseBench, BaseBenchConfig
 class CRAGConfig(BaseBenchConfig):
 
     def __init__(self, params: Dict[str, Any], task_id: str):
-        params.setdefault("BATCH_SIZE", 10)
-        params.setdefault("TEST_START_INDEX", task_id)
-        params.setdefault("TEST_END_INDEX", task_id + 1)
+        params.setdefault("BATCH_SIZE", 100)
         self.required_params = ["OPENAI_API_KEY", "EVALUATION_MODEL_NAME"] # for llm api call evaluation when exact match fails
-        self.optional_params = ["BATCH_SIZE", "TEST_START_INDEX", "TEST_END_INDEX"]
+        self.optional_params = ["BATCH_SIZE"]
         super().__init__(params)
 
 
@@ -64,19 +62,8 @@ class CRAGBench(BaseBench):
             }
         
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
-        # TODO: get the actual dataset size
-        splits = {
-            "train": 100,
-            "dev": 50,
-            "test": 200
-        }
-        
-        try:
-            # one task currently represents one row in the dataset
-            task_ids = [str(i) for i in range(splits.get(split, 0))]
-            return {"task_ids": task_ids, "error_message": None}
-        except Exception as e:
-            return {"task_ids": [], "error_message": str(e)}
+        # Only one task for CRAG benchmark
+        return {"task_ids": ["0"], "error_message": None}
         
     def cleanup(self):
         if os.path.exists(self.results_dir):

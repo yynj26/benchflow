@@ -7,7 +7,6 @@ import random
 import time
 from pathlib import Path
 from typing import Dict, Any, List
-import requests
 from openai import APIConnectionError, OpenAI, RateLimitError
 from transformers import LlamaTokenizerFast
 import re
@@ -63,9 +62,12 @@ class CRAGClient(BenchClient):
 
 def config() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run CRAG benchmark evaluation")
-    parser.add_argument("--agent_url", default="http://0.0.0.0:9000")
-    parser.add_argument("--evaluation_model", default="gpt-4-0125-preview") # TODO: check if we get evaluation model from parser or env variable
-    parser.add_argument("--max_retry", type=int, default=10)
+    # should be able to access CRAGConfig params as env variables in the container
+    parser.add_argument("--agent_url", default=os.getenv("AGENT_URL"))
+    parser.add_argument("--evaluation_model", default=os.getenv("EVALUATION_MODEL_NAME"))
+    parser.add_argument("--task_id", type=int, default=int(os.getenv("TEST_START_IDX", "0")))
+    parser.add_argument("--openai_api_key", type=str, default=os.getenv("OPENAI_API_KEY"))
+    parser.add_argument("--batch_size", type=int, default=int(os.getenv("BATCH_SIZE", "100")))
     return parser.parse_args()
 
 def get_system_message():
@@ -225,7 +227,7 @@ Output: {"score": 0, "explanation": "The prediction does not exactly match the g
 
 Question: "at what age did usher perform in the half time show of superbowl?"
 Ground Truth: "45 years old"
-Prediction: "usher has not performed at a super bowl halftime show."
+Prediction: "usher has not performed at a super Bowl halftime show."
 Output: {"score": 0, "explanation": "The prediction does not match the ground truth."}
 
 Question: "what year did olivia rodrigo win the grammys best new artist award?"
@@ -344,10 +346,11 @@ def log_response(messages: List[Dict[str, str]], response: str):
 def evaluate_predictions(queries: List[str], 
                        ground_truths_list: List[str], 
                        predictions: List[str], 
-                       evaluation_model_name: str) -> Dict[str, Any]:
-    if "chat" in evaluation_model_name.lower():
+                       evaluation_model_name: str,
+                       openai_api_key: str) -> Dict[str, Any]:
+    if "gpt" in evaluation_model_name.lower():
         # now we are using chatgpt
-        openai_client = OpenAI()
+        openai_client = OpenAI(api_key=openai_api_key)
         n_miss, n_correct = 0, 0
         system_message = get_system_message()
 
@@ -356,7 +359,6 @@ def evaluate_predictions(queries: List[str],
         )):
             query = queries[_idx]
             ground_truths = ground_truths_list[_idx].strip()
-            # trim prediction to 75 tokens using Llama2 tokenizer
             prediction = trim_predictions_to_max_token_length(prediction)
             prediction = prediction.strip()
 
@@ -470,8 +472,14 @@ def run_eval(args: argparse.Namespace, agent_url: str) -> None:
     1. Loads task data in batches
     2. Gets predictions from agent
     3. Evaluates predictions
-    4. Saves results per task_id (row)
+    4. Saves results
+    
+    Only processes the entire dataset (task_id must be 0).
     """
+    if args.task_id != 0:
+        logger.error("CRAG benchmark only supports task_id=0 (full dataset evaluation)")
+        return
+    
     results_dir = os.getenv("RESULTS_DIR", "/workspace/results")
     Path(results_dir).mkdir(parents=True, exist_ok=True)
     
@@ -479,38 +487,39 @@ def run_eval(args: argparse.Namespace, agent_url: str) -> None:
         agent = CRAGClient(agent_url=agent_url, max_retry=args.max_retry)
         data_path = f"/workspace/CRAG/example_data/dev_data.jsonl.bz2"
         
-        # TODO: check task_id defintion, currently defined to be row number
-        current_task_id = 0
-        for batch in load_data_in_batches(data_path, 100):
+        all_queries = []
+        all_ground_truths = []
+        all_predictions = []
+        
+        for batch in load_data_in_batches(data_path, args.batch_size):
             for item in batch:
                 try:
-                    # Get prediction for this row
                     state_update = {
                         "query": item["query"],
                         "search_results": item["search_results"],
                         "interaction_id": item["interaction_id"]
                     }
-                    action = agent.get_action(state_update) # get_action first prepares environment with state_update and then pass env_data to agent server. return parsed action from agent server
+                    action = agent.get_action(state_update)
                     
-                    # evaluate single prediction
-                    results = evaluate_predictions(
-                        queries=[item["query"]],
-                        ground_truths_list=[item["answer"]],
-                        predictions=[action["answer"]],
-                        evaluation_model_name=args.evaluation_model
-                    )
-                    
-                    with open(os.path.join(results_dir, f"{current_task_id}_results.json"), "w") as f:
-                        json.dump(results, f)
-                        
-                    logger.info(f"Task {current_task_id} Results: {results}")
-                    current_task_id += 1
+                    all_queries.append(item["query"])
+                    all_ground_truths.append(item["answer"])
+                    all_predictions.append(action["answer"])
                     
                 except Exception as e:
-                    logger.error(f"Error processing task {current_task_id}: {e}")
-                    with open(os.path.join(results_dir, f"{current_task_id}_results.json"), "w") as f:
-                        json.dump({"error": str(e)}, f)
-                    current_task_id += 1
+                    logger.error(f"Error agent taking action: {e}")
+        
+        if all_queries:
+            results = evaluate_predictions(
+                queries=all_queries,
+                ground_truths_list=all_ground_truths,
+                predictions=all_predictions,
+                evaluation_model_name=args.evaluation_model,
+                openai_api_key=args.openai_api_key
+            )
+            
+            with open(os.path.join(results_dir, f"{args.task_id}_results.json"), "w") as f:
+                json.dump(results, f)
+            logger.info(f"Full Dataset Results: {results}")
 
     except Exception as e:
         logger.error(f"Error opening dataset: {e}")
