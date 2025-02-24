@@ -61,9 +61,8 @@ class BaseBench(ABC):
         """
         Run the benchmark through docker.
         """
-        config = self.get_config(params, task_id)
-        config.model_validate(config)
-        params = config.get_params()
+        config = self.get_config(task_id)
+        params = config.get_params(params)
         params.update({
             "AGENT_URL": agent_url,
             "TEST_START_IDX": str(task_id),
@@ -170,7 +169,7 @@ class BaseBench(ABC):
         pass
     
     @abstractmethod
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BenchConfig:
+    def get_config(self, task_id: str) -> BenchConfig:
         """
         Benchmark need to deal with the END_IDX so that it can only run one task at a time
         task_id is the start index of the task. You can also make your benchmark a single 

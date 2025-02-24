@@ -4,21 +4,13 @@ from typing import Any, Dict
 
 from datasets import load_dataset
 
-from benchflow import BaseBench, BaseBenchConfig
-
-
-class MMLUPROConfig(BaseBenchConfig):
-    required_env = []
-    optional_env = []
-    defaults = {}
-
-    def __init__(self, params: Dict[str, Any]):
-        super().__init__(params)
+from benchflow import BaseBench
+from benchflow.schemas import BenchConfig
 
 
 class MMLUPROBench(BaseBench):
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
-        return MMLUPROConfig(params)
+    def get_config(self, task_id: str) -> BenchConfig:
+        return BenchConfig()
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:mmlu-pro-v1"

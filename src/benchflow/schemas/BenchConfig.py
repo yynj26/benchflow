@@ -30,7 +30,7 @@ class BenchConfig(BaseModel):
         else:
             raise ValueError("'optional' must be a dictionary or a list of dictionaries")
 
-    def get_params(self, runtime: Dict[str, Any] = None) -> Dict[str, Any]:
+    def get_params(self, runtime_params: Dict[str, Any] = None) -> Dict[str, Any]:
         """
         Merge runtime parameters with configuration defaults and return the final parameters.
         
@@ -39,22 +39,22 @@ class BenchConfig(BaseModel):
         For each parameter in 'optional', if a runtime value is provided, it is used;
         otherwise, the default value from the configuration is used.
         """
-        runtime = runtime or {}
+        runtime_params = runtime_params or {}
         params = {}
         
         # Validate and fetch required parameters from runtime
         for key in self.required:
-            if key in runtime and runtime[key] is not None:
-                params[key] = runtime[key]
+            if key in runtime_params and runtime_params[key] is not None:
+                params[key] = runtime_params[key]
             else:
                 raise ValueError(f"Missing required parameter: {key}")
         
         # For optional parameters, use runtime value if provided; otherwise, use the default value
         for key, default in self.optional.items():
-            params[key] = runtime.get(key, default)
+            params[key] = runtime_params.get(key, default)
         return params
 
-    def __init__(self, config_source: Union[str, Dict[str, Any]], **kwargs):
+    def __init__(self, config_source: Union[str, Dict[str, Any], None], **kwargs):
         """
         The constructor accepts either a YAML file path or a dictionary as the configuration source.
         Additional keyword arguments can override or add to the configuration.
@@ -64,9 +64,13 @@ class BenchConfig(BaseModel):
                 data = yaml.safe_load(f)
         elif isinstance(config_source, dict):
             data = config_source
+        elif config_source is None:
+            data = {
+                "required": [],
+                "optional": {}
+            }
         else:
             raise ValueError("config_source must be a YAML file path or a dictionary")
         
-        # Merge any additional keyword arguments into the configuration data
         data.update(kwargs)
         super().__init__(**data)
