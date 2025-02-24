@@ -7,8 +7,8 @@ from pydantic import BaseModel, Field, field_validator
 class BenchConfig(BaseModel):
     # List of required parameter names (no defaults provided)
     required: List[str] = Field(default_factory=list)
-    # Optional parameters can be defined either as a list of single-key dicts or as a dict directly
-    optional: Union[Dict[str, Any], List[Dict[str, Any]]] = Field(default_factory=dict)
+    # Optional parameters can be used to define the parameters that are not required and the default values
+    optional: List[Dict[str, Any]] = Field(default_factory=list)
 
     @field_validator('optional', mode='before')
     def merge_optional(cls, v):
@@ -27,8 +27,6 @@ class BenchConfig(BaseModel):
                 else:
                     raise ValueError("Each item in 'optional' must be a dictionary")
             return merged
-        elif isinstance(v, dict):
-            return v
         else:
             raise ValueError("'optional' must be a dictionary or a list of dictionaries")
 

@@ -21,8 +21,9 @@ class WebCanvasBench(BaseBench):
         # Benchmark need to deal with the END_IDX so that it can only run one task at a time
         # task_id is the start index of the task
         config_dict = {
-            "required": ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY", "TEST_END_IDX"],
+            "required": ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"],
             "optional": [
+                {"TEST_START_IDX": task_id},
                 {"RESULTS_DIR": "/app/batch_tasks_results/example"}
             ]
         }
