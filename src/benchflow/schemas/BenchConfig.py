@@ -8,7 +8,7 @@ class BenchConfig(BaseModel):
     # List of required parameter names (no defaults provided)
     required: List[str] = Field(default_factory=list)
     # Optional parameters can be used to define the parameters that are not required and the default values
-    optional: List[Dict[str, Any]] = Field(default_factory=list[Dict[str, Any]])
+    optional: List[Dict[str, Any]] = Field(default_factory=list)
 
     @field_validator('optional', mode='before')
     def merge_optional(cls, v):
