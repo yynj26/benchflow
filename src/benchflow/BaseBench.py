@@ -92,10 +92,11 @@ class BaseBench(ABC):
             container.wait()
 
             result = self.get_result(task_id)
-            if not self.validate_result(result):
-                return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(result)})
-            print(result)
-            return self.format_result(task_id, result["is_resolved"], result["score"], result["message"], result["log"])
+            if isinstance(result, Dict):
+                result = BenchmarkResult(**result)
+            return self.format_result(task_id, result.is_resolved, result.score, result.message, result.log)
+        except ValidationError as e:
+            return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(e)})
         except docker.errors.ImageNotFound:
             return self.format_result(task_id, False, 0, {"error": "Image not found"})
         except Exception as e:
@@ -149,26 +150,6 @@ class BaseBench(ABC):
             }
         }
     
-    @final
-    def validate_result(self, result: Dict[str, Any]) -> bool:
-        """
-        Validate the result of the benchmark.
-        """
-        try:
-            BenchmarkResult.model_validate(result)
-            return True
-        except ValidationError as e:
-            self.logger.error(f"BenchmarkResult validation failed: {e}")
-            return False
-    
-    def cleanup(self):
-        """
-        Clean up benchmark resources.
-        It will be called when the benchmark is finished.
-        Just leave it empty if you don't need to clean up anything.
-        """
-        pass
-    
     @abstractmethod
     def get_config(self, task_id: str) -> BenchConfig:
         """
@@ -201,7 +182,7 @@ class BaseBench(ABC):
         pass
 
     @abstractmethod
-    def get_result(self, task_id: str) -> BenchmarkResult:
+    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
         """
         You should return the results in this function.
         

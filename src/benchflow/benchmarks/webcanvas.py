@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig
+from benchflow.schemas import BenchConfig, BenchmarkResult
 
 
 #------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ class WebCanvasBench(BaseBench):
         """
         return "/app/LOGS"
 
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
         """
         Read the result file (assuming the path is: {results_dir}/example/result/result.json),
         and parse the result dictionary, which requires the is_resolved, score, and message fields.
@@ -55,9 +55,8 @@ class WebCanvasBench(BaseBench):
         # Construct the full path to the result file (related to the RESULTS_DIR configuration inside the container)
         result_file = os.path.join(self.results_dir, "example", "result", "result.json")
         log_file = os.path.join(self.results_dir, "example", "result", "out.json")
-        print(result_file)
         if not os.path.exists(result_file):
-            return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
+            return BenchmarkResult(is_resolved=False, metrics={"score": 0}, log={"error": "No results found"}, other={})
         try:
             with open(result_file, 'r') as f:
                 data = f.read().strip()
@@ -71,14 +70,14 @@ class WebCanvasBench(BaseBench):
                 log = f.read().strip()
                 print(log)
         except Exception as e:
-            return {"is_resolved": False, "score": 0, "message": {"error": e}}
+            return BenchmarkResult(is_resolved=False, metrics={"score": 0}, log={"error": e}, other={})
         
         # Calculate whether the benchmark passed and the score based on the parsed results
         is_resolved = results.get("task_success_rate", 0) > 0.99
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
         message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
-        return {"is_resolved": is_resolved, "score": score, "message": message, "log": str(log)}
+        return BenchmarkResult(is_resolved=is_resolved, metrics={"score": score}, log=message, other={})
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

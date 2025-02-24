@@ -4,7 +4,7 @@ import subprocess
 from typing import Any, Dict
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig
+from benchflow.schemas import BenchConfig, BenchmarkResult
 
 
 class WebArenaBench(BaseBench):
@@ -41,7 +41,7 @@ class WebArenaBench(BaseBench):
         """
         return "/app/log_files"
     
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
         """
         Read and parse the benchmark result from the log files.
         
@@ -51,7 +51,7 @@ class WebArenaBench(BaseBench):
         """
         log_files_txt = os.path.join(self.results_dir, "log_files.txt")
         if not os.path.exists(log_files_txt):
-            return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
+            return BenchmarkResult(is_resolved=False, metrics={"score": 0},log={"error": "No results found"}, other={})
         
         log_content = ""
         try:
@@ -63,7 +63,7 @@ class WebArenaBench(BaseBench):
                     with open(full_log_path, 'r') as log_file:
                         log_content += log_file.read() + "\n"
         except Exception as e:
-            return {"is_resolved": False, "score": 0, "message": {"error": f"Failed to read log files: {e}"}}
+            return BenchmarkResult(is_resolved=False, metrics={"score": 0}, log={"error": f"Failed to read log files: {e}"}, other={})
         
         # Parse the log content to extract score and status
         is_resolved = False
@@ -78,7 +78,7 @@ class WebArenaBench(BaseBench):
                 if "(PASS)" in line:
                     is_resolved = True
                     
-        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task runs successfully."}, "log": log_content}
+        return BenchmarkResult(is_resolved=is_resolved, metrics={"score": score}, log={"details": log_content}, other={})
     
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

@@ -6,7 +6,7 @@ MetricValue = Union[bool, int, float, str]
 
 class BenchmarkResult(BaseModel):
     is_resolved: bool
-    log: str
+    log: Dict[str, str]
     metrics: Dict[str, MetricValue]
     other: Dict[str, Any]
 
@@ -14,7 +14,9 @@ class BenchmarkResult(BaseModel):
         schema_extra = {
             "example": {
                 "is_resolved": True,
-                "log": "finish test",
+                "log": {
+                    "trace": "trace message",
+                },
                 "metrics": {
                     "metric1": True,
                     "metric2": 123,
@@ -22,7 +24,8 @@ class BenchmarkResult(BaseModel):
                     "metric4": "OK"
                 },
                 "other": {
-                    "extra_info": "extra info"
+                    "extra_info": "extra info",
+                    "error": "error message"
                 }
             }
         }

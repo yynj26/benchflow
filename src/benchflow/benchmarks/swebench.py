@@ -5,7 +5,7 @@ from typing import Any, Dict
 from datasets import Dataset, load_dataset
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig
+from benchflow.schemas import BenchConfig, BenchmarkResult
 
 
 class SwebenchBench(BaseBench):
@@ -19,7 +19,7 @@ class SwebenchBench(BaseBench):
                 {"INSTANCE_IDS": task_id},
                 {"MAX_WORKERS": 1},
                 {"RUN_ID": task_id}
-                ]
+            ]
         }
         return BenchConfig(config_dict)
 
@@ -32,7 +32,7 @@ class SwebenchBench(BaseBench):
     def get_log_files_dir_in_container(self) -> str:
         return "/app/logs"
 
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
         results_file = os.path.join(self.results_dir, f"self_model.{task_id}.json")
         model_prediction_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/patch.diff")
         report_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/report.json")
@@ -46,18 +46,23 @@ class SwebenchBench(BaseBench):
                 model_prediction = f.read()
             with open(report_file, 'r') as f:
                 report = json.load(f)
+
             return {
-                    "is_resolved": pass_rate > 0.99,
-                    "score": pass_rate,
-                    "message": {"details": result_data},
-                    "log": model_prediction + "\n" + json.dumps(report),
-                }
+                "is_resolved": pass_rate > 0.99,
+                "metrics": {
+                    "pass_rate": pass_rate,
+                },
+                "log": {"prediction": model_prediction, "report": report},
+                "other": {"details": result_data},
+            }
         except Exception as e:
             return {
                 "is_resolved": False,
-                "score": 0,
-                "message": {"error": str(e)},
-                "log": str(e),
+                "metrics": {
+                    "pass_rate": 0,
+                },
+                "log": {"error": str(e)},
+                "other": {"error": str(e)},
             }
         
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
