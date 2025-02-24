@@ -39,9 +39,10 @@ class CRAGAgent(BaseAgent):
         search_results = env_info.get('search_results', [])
         logger.info(f"[CRAGAgent]: Search results: {search_results}")
         
+        # search_results is now a list of strings (snippets)
         context = "\n\n".join(
-            f"Document {i+1}:\n{doc.get('content', '')}"
-            for i, doc in enumerate(search_results)
+            f"Document {i+1}:\n{snippet}"
+            for i, snippet in enumerate(search_results)
         )
         
         return (
@@ -76,7 +77,7 @@ class CRAGAgent(BaseAgent):
             raise
 
 def main():
-    logger.info("Starting CRAGOpenAIAgent...")
+    logger.info("Starting CRAGAgent...")
     agent = CRAGAgent()
     logger.info("Running agent on http://0.0.0.0:9000")
     agent.run_with_endpoint(host="0.0.0.0", port=9000)

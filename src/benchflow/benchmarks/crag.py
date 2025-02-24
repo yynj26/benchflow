@@ -21,7 +21,7 @@ class CRAGBench(BaseBench):
         return CRAGConfig(params, task_id)
     
     def get_image_name(self) -> str:
-        return "kirk2000/benchflow:crag-v1" # TODO: check if we need to push the image to docker hub
+        return "danielfang001/benchflow:crag-v1" # TODO: check if we need to push the image to docker hub
     
     def get_results_dir_in_container(self) -> str:
         return "/app/results"

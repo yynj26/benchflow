@@ -33,7 +33,7 @@ formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
 file_handler.setFormatter(formatter)
 
-tokenizer = LlamaTokenizerFast.from_pretrained("tokenizer")
+tokenizer = LlamaTokenizerFast.from_pretrained("huggyllama/llama-7b")
 
 class CRAGClient(BenchClient):
     def __init__(self, agent_url: str, max_retry: int = 1):
@@ -65,10 +65,12 @@ def config() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run CRAG benchmark evaluation")
     # should be able to access CRAGConfig params as env variables in the container
     parser.add_argument("--agent_url", default=os.getenv("AGENT_URL"))
-    parser.add_argument("--evaluation_model", default=os.getenv("EVALUATION_MODEL_NAME"))
+    parser.add_argument("--test_mode", type=bool, default=os.getenv("TEST_MODE", "False"))
+    parser.add_argument("--evaluation_model", default=os.getenv("EVALUATION_MODEL_NAME", "gpt-4-0125-preview"))
     parser.add_argument("--task_id", type=int, default=int(os.getenv("TEST_START_IDX", "0")))
     parser.add_argument("--openai_api_key", type=str, default=os.getenv("OPENAI_API_KEY"))
     parser.add_argument("--batch_size", type=int, default=int(os.getenv("BATCH_SIZE", "100")))
+    parser.add_argument("--max_retry", type=int, default=int(os.getenv("MAX_RETRY", "3")))
     return parser.parse_args()
 
 def get_system_message():
@@ -270,7 +272,10 @@ Output: {"score": 0, "explanation": "The prediction is not answering the questio
 
 
 def attempt_api_call(client, model_name, messages, max_retries=10):
-    """Attempt an API call with retries upon encountering specific errors."""
+    """Attempt an API call with exponential backoff for rate limits"""
+    base_delay = 1  # Start with 1 second delay
+    max_delay = 64  # Maximum delay of 64 seconds
+    
     for attempt in range(max_retries):
         try:
             response = client.chat.completions.create(
@@ -280,11 +285,22 @@ def attempt_api_call(client, model_name, messages, max_retries=10):
                 temperature=0.0,
             )
             return response.choices[0].message.content
-        except (APIConnectionError, RateLimitError):
-            logger.warning(f"API call failed on attempt {attempt + 1}, retrying...")
+            
+        except RateLimitError:
+            delay = min(base_delay * (2 ** attempt), max_delay) 
+            logger.warning(f"Rate limit hit, waiting {delay} seconds before retry {attempt + 1}/{max_retries}")
+            time.sleep(delay)
+            
+        except APIConnectionError:
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            logger.warning(f"Connection error, waiting {delay} seconds before retry {attempt + 1}/{max_retries}")
+            time.sleep(delay)
+            
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
             break
+            
+    logger.error("Max retries reached, skipping this evaluation")
     return None
 
 def parse_response(response: str):
@@ -362,7 +378,8 @@ def evaluate_predictions(queries: List[str],
             ground_truths = ground_truths_list[_idx].strip()
             prediction = trim_predictions_to_max_token_length(prediction)
             prediction = prediction.strip()
-
+            prediction_lowercase = prediction.lower()
+            
             if "i don't know" in prediction_lowercase:
                 n_miss += 1
                 continue
@@ -371,7 +388,7 @@ def evaluate_predictions(queries: List[str],
 
             for ground_truth in ground_truths:
                 ground_truth_lowercase = ground_truth.lower()
-                prediction_lowercase = prediction.lower()
+                
                 messages = [
                     {"role": "system", "content": system_message},
                     {
@@ -427,7 +444,7 @@ def evaluate_predictions(queries: List[str],
     else:
         raise NotImplementedError(f"Unknown evaluation model: {evaluation_model_name}")
     
-def load_data_in_batches(dataset_path, batch_size):
+def load_data_in_batches(dataset_path, batch_size, test_mode=False):
     """
     Generator function that reads data from a compressed file and yields batches of data.
     Each batch is a dictionary containing lists of interaction_ids, queries, search results, query times, and answers.
@@ -440,9 +457,8 @@ def load_data_in_batches(dataset_path, batch_size):
     dict: A batch of data.
     """
     def initialize_batch():
-        """ Helper function to create an empty batch. """
         return {"interaction_id": [], "query": [], "search_results": [], "query_time": [], "answer": []}
-
+    
     try:
         with bz2.open(dataset_path, "rt") as file:
             batch = initialize_batch()
@@ -451,13 +467,11 @@ def load_data_in_batches(dataset_path, batch_size):
                     item = json.loads(line)
                     for key in batch:
                         batch[key].append(item[key])
-                    
                     if len(batch["query"]) == batch_size:
                         yield batch
                         batch = initialize_batch()
                 except json.JSONDecodeError:
-                    logger.warn("Warning: Failed to decode a line.")
-            # Yield any remaining data as the last batch
+                        logger.warn("Warning: Failed to decode a line.")
             if batch["query"]:
                 yield batch
     except FileNotFoundError as e:
@@ -467,7 +481,35 @@ def load_data_in_batches(dataset_path, batch_size):
         logger.error(f"Error: An error occurred while reading the file {dataset_path}.")
         raise e
 
-def run_eval(args: argparse.Namespace, agent_url: str) -> None:
+def load_data_test_mode(dataset_path):
+    """
+    Loads data in test mode, only processing the first 5 items.
+    Returns a single batch with exactly 5 items.
+    """
+    batch = {"interaction_id": [], "query": [], "search_results": [], "query_time": [], "answer": []}
+    
+    try:
+        with bz2.open(dataset_path, "rt") as file:
+            count = 0
+            for line in file:
+                if count >= 5:
+                    break
+                try:
+                    item = json.loads(line)
+                    for key in batch:
+                        batch[key].append(item[key])
+                    count += 1
+                except json.JSONDecodeError:
+                    logger.warn("Warning: Failed to decode a line.")
+        return batch
+    except FileNotFoundError as e:
+        logger.error(f"Error: The file {dataset_path} was not found.")
+        raise e
+    except IOError as e:
+        logger.error(f"Error: An error occurred while reading the file {dataset_path}.")
+        raise e
+
+def run_eval(args: argparse.Namespace, agent_url: str, test_mode: bool = False) -> None:
     """
     Main test function that:
     1. Loads task data in batches
@@ -491,25 +533,44 @@ def run_eval(args: argparse.Namespace, agent_url: str) -> None:
         all_queries = []
         all_ground_truths = []
         all_predictions = []
-        
-        for batch in load_data_in_batches(data_path, args.batch_size):
-            for item in batch:
-                try:
+
+        if test_mode:
+            try:
+                batch = load_data_test_mode(data_path)
+                for i in range(len(batch["query"])):
                     state_update = {
-                        "query": item["query"],
-                        "search_results": item["search_results"],
-                        "interaction_id": item["interaction_id"]
+                        "query": batch["query"][i],
+                        "search_results": batch["search_results"][i],
+                        "interaction_id": batch["interaction_id"][i]
                     }
                     action = agent.get_action(state_update)
                     
-                    all_queries.append(item["query"])
-                    all_ground_truths.append(item["answer"])
+                    all_queries.append(batch["query"][i])
+                    all_ground_truths.append(batch["answer"][i])
                     all_predictions.append(action["answer"])
-                    
-                except Exception as e:
-                    logger.error(f"Error agent taking action: {e}")
+            except Exception as e:
+                logger.error(f"Error agent taking action: {e}")
+                
+        else:
+            for batch in load_data_in_batches(data_path, args.batch_size):
+                for i in range(len(batch["query"])):
+                    try:
+                        state_update = {
+                            "query": batch["query"][i],
+                            "search_results": batch["search_results"][i],
+                            "interaction_id": batch["interaction_id"][i]
+                        }
+                        action = agent.get_action(state_update)
+                        
+                        all_queries.append(batch["query"][i])
+                        all_ground_truths.append(batch["answer"][i])
+                        all_predictions.append(action["answer"])
+                        
+                    except Exception as e:
+                        logger.error(f"Error agent taking action: {e}")
         
         if all_queries:
+            logger.info(f"Evaluating {len(all_queries)} queries")
             results = evaluate_predictions(
                 queries=all_queries,
                 ground_truths_list=all_ground_truths,
@@ -527,4 +588,4 @@ def run_eval(args: argparse.Namespace, agent_url: str) -> None:
 
 if __name__ == "__main__":
     args = config()
-    run_eval(args, args.agent_url)
+    run_eval(args, args.agent_url, args.test_mode)
