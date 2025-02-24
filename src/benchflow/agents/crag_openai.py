@@ -35,7 +35,9 @@ class CRAGAgent(BaseAgent):
 
     def _construct_message(self, env_info: Dict[str, Any]) -> str:
         query = env_info.get('query', '')
+        logger.info(f"[CRAGAgent]: Query: {query}")
         search_results = env_info.get('search_results', [])
+        logger.info(f"[CRAGAgent]: Search results: {search_results}")
         
         context = "\n\n".join(
             f"Document {i+1}:\n{doc.get('content', '')}"
@@ -72,3 +74,12 @@ class CRAGAgent(BaseAgent):
         except Exception as e:
             logger.error(f"[CRAGAgent]: Error calling OpenAI API: {e}")
             raise
+
+def main():
+    logger.info("Starting CRAGOpenAIAgent...")
+    agent = CRAGAgent()
+    logger.info("Running agent on http://0.0.0.0:9000")
+    agent.run_with_endpoint(host="0.0.0.0", port=9000)
+
+if __name__ == "__main__":
+    main()

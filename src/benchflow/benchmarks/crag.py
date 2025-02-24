@@ -51,7 +51,7 @@ class CRAGBench(BaseBench):
                 "is_resolved": is_resolved,
                 "score": results.get("score", 0),
                 "message": {"details": "Task runs successfully."},
-                "raw_results": results
+                "log": str(results)
             }
         
         except Exception as e:
@@ -59,6 +59,7 @@ class CRAGBench(BaseBench):
                 "is_resolved": False,
                 "score": 0,
                 "message": {"error": str(e)},
+                "log": str(e),
             }
         
     def get_all_tasks(self, split: str) -> Dict[str, Any]:

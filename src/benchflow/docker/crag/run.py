@@ -1,5 +1,4 @@
 import argparse
-import base64
 import json
 import logging
 import os
@@ -41,17 +40,19 @@ class CRAGClient(BenchClient):
         super().__init__(agent_url, max_retry)
 
     def prepare_environment(self, state_update: Dict[str, Any]) -> Dict[str, Any]:
+        search_results = state_update.get("search_results", [])
+        page_snippets = [result.get("page_snippet", "") for result in search_results]
         return {
             "env_info": {
                 "query": state_update.get("query", ""),
-                "search_results": state_update.get("search_results", []),
+                "search_results": page_snippets,
                 "interaction_id": state_update.get("interaction_id", "")
             }
         }
 
-    def parse_action(self, raw_action: Dict[str, Any]) -> Dict[str, Any]:
+    def parse_action(self, raw_action: str) -> Dict[str, Any]:
         try:
-            answer = raw_action.get("answer", "").strip()
+            answer = raw_action.strip()
             return {
                 "answer": answer,
                 "raw_prediction": raw_action
