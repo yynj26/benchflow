@@ -1,6 +1,7 @@
 from .Bench import Bench
 from .benchmarks import __all__ as BENCHMARKS
 
+
 def load_benchmark(benchmark_name: str, bf_token: str) -> Bench:
     """
     Load the benchmark. You need to get a bf_token on https://benchflow.ai.

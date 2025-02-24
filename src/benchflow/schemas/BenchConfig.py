@@ -1,6 +1,8 @@
 from typing import Any, Dict, List, Union
-from pydantic import BaseModel, Field, field_validator
+
 import yaml
+from pydantic import BaseModel, Field, field_validator
+
 
 class BenchConfig(BaseModel):
     # List of required parameter names (no defaults provided)

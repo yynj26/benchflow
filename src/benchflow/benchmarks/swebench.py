@@ -4,23 +4,24 @@ from typing import Any, Dict
 
 from datasets import Dataset, load_dataset
 
-from benchflow import BaseBench, BaseBenchConfig
-
-
-class SwebenchConfig(BaseBenchConfig):
-    required_env = []
-    optional_env = ["INSTANCE_IDS", "MAX_WORKERS", "RUN_ID"]
-
-    def __init__(self, params: Dict[str, Any], task_id: str):
-        params.setdefault("INSTANCE_IDS", task_id)
-        params.setdefault("MAX_WORKERS", 1)
-        params.setdefault("RUN_ID", task_id)
-        super().__init__(params)
+from benchflow import BaseBench
+from benchflow.schemas import BenchConfig
 
 
 class SwebenchBench(BaseBench):
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
-        return SwebenchConfig(params, task_id)
+    def __init__(self):
+        super().__init__()
+
+    def get_config(self, task_id: str) -> BenchConfig:
+        config_dict = {
+            "required": [],
+            "optional": [
+                {"INSTANCE_IDS": task_id},
+                {"MAX_WORKERS": 1},
+                {"RUN_ID": task_id}
+                ]
+        }
+        return BenchConfig(config_dict)
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:swebench-v1"

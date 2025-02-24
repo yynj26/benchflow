@@ -3,33 +3,25 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from benchflow import BaseBench, BaseBenchConfig
+from benchflow import BaseBench
+from benchflow.schemas import BenchConfig
 
 
-# ------------------------------------------------------------------------------
-# WebArenaConfig: Define the configuration for WebArenaBench.
-# For WebArenaBench no extra environment variables are required.
-# ------------------------------------------------------------------------------
-class WebArenaConfig(BaseBenchConfig):
-    required_env = ["TEST_END_IDX"]   # No required env variables for WebArenaBench
-    optional_env = []
-    defaults = {
-        "RESULTS_DIR": "/app/results"
-    }
-
-# ------------------------------------------------------------------------------
-# WebArenaBench Implementation
-# ------------------------------------------------------------------------------
 class WebArenaBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+    def get_config(self, task_id: str) -> BenchConfig:
         """
         Return a WebArenaConfig instance that validates the input parameters.
         """
-        params["TEST_END_IDX"] = str(int(task_id) + 1)
-        return WebArenaConfig(params)
+        config_dict = {
+            "required": [],
+            "optional": [
+                {"TEST_END_IDX": str(int(task_id) + 1)}
+            ]
+        }
+        return BenchConfig(config_dict)
     
     def get_image_name(self) -> str:
         """

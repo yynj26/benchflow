@@ -3,21 +3,9 @@ import json
 import os
 from typing import Any, Dict
 
-from benchflow import BaseBench, BaseBenchConfig
+from benchflow import BaseBench
+from benchflow.schemas import BenchConfig
 
-
-#------------------------------------------------------------------------------
-# Custom configuration: Define the environment variables and validation rules for WebCanvasBench
-#------------------------------------------------------------------------------
-class WebCanvasConfig(BaseBenchConfig):
-    # These envs are required by the benchmark, and should be provided by the user.
-    required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY", "TEST_END_IDX"]
-    # These envs are optional, and will use the default value if not provided.
-    optional_env = []
-    # These envs are defaults, and will be used if not provided.
-    defaults = {
-        "RESULTS_DIR": "/app/batch_tasks_results/example"
-    }
 
 #------------------------------------------------------------------------------
 # WebCanvasBench implementation
@@ -26,14 +14,19 @@ class WebCanvasBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+    def get_config(self, task_id: str) -> BenchConfig:
         """
         Return a WebCanvasConfig instance, validate the input parameters.
         """
         # Benchmark need to deal with the END_IDX so that it can only run one task at a time
         # task_id is the start index of the task
-        params["TEST_END_IDX"] = str(task_id)
-        return WebCanvasConfig(params)
+        config_dict = {
+            "required": ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY", "TEST_END_IDX"],
+            "optional": [
+                {"RESULTS_DIR": "/app/batch_tasks_results/example"}
+            ]
+        }
+        return BenchConfig(config_dict)
 
     def get_image_name(self) -> str:
         """

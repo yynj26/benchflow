@@ -1,4 +1,5 @@
-from typing import Dict, Any, Union
+from typing import Any, Dict, Union
+
 from pydantic import BaseModel
 
 MetricValue = Union[bool, int, float, str]

@@ -3,11 +3,12 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from pydantic import ValidationError
-from benchflow.schemas import BenchmarkResult, BenchConfig
 from typing import Any, Dict, Optional, final
 
 import docker
+from pydantic import ValidationError
+
+from benchflow.schemas import BenchConfig, BenchmarkResult
 
 
 class ColoredFormatter(logging.Formatter):
