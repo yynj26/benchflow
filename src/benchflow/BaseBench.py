@@ -58,7 +58,7 @@ class BaseBench(ABC):
         self.docker_client = docker.from_env()
 
     @final
-    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> BenchmarkResult:
         """
         Run the benchmark through docker.
         """
@@ -94,40 +94,14 @@ class BaseBench(ABC):
             result = self.get_result(task_id)
             if isinstance(result, Dict):
                 result = BenchmarkResult(**result)
-            return self.format_result(task_id, result.is_resolved, result.score, result.message, result.log)
+            return result
         except ValidationError as e:
-            return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(e)})
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "Benchmark result is invalid", "result": str(e)}, other={})
         except docker.errors.ImageNotFound:
-            return self.format_result(task_id, False, 0, {"error": "Image not found"})
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "Image not found"}, other={})
         except Exception as e:
             self.logger.exception("Error during benchmark execution:")
-            return self.format_result(task_id, False, 0, {"error": str(e)})
-
-    @final
-    def format_result(self, task_id: str, is_resolved: bool, score: float, message: Dict[str, Any], log: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Format the result of the benchmark.
-        
-        The result should be a dictionary with the following keys:
-        ``` 
-        {
-            "task_id": the id of the task,
-            "is_resolved": a boolean value indicating if the task is resolved,
-            "score": a float value indicating the score of the task,
-            "message": a dictionary containing any information you want to show to the agent user,
-            "log": a string containing the log of the task (trace, trajectory, etc)
-        }
-        ```
-        """
-        if log is None:
-            log = message["error"]
-        return {
-            "task_id": task_id,
-            "is_resolved": is_resolved,
-            "score": score,
-            "message": message,
-            "log": log
-        }
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": str(e)}, other={})
 
     @final
     def get_volumes(self) -> Dict[str, Dict[str, str]]:

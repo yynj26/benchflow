@@ -57,7 +57,7 @@ class WebCanvasBench(BaseBench):
         result_file = os.path.join(self.results_dir, "example", "result", "result.json")
         log_file = os.path.join(self.results_dir, "example", "result", "out.json")
         if not os.path.exists(result_file):
-            return BenchmarkResult(is_resolved=False, metrics={"score": 0}, log={"error": "No results found"}, other={})
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "No results found"}, other={})
         try:
             with open(result_file, 'r') as f:
                 data = f.read().strip()
@@ -71,14 +71,14 @@ class WebCanvasBench(BaseBench):
                 log = f.read().strip()
                 print(log)
         except Exception as e:
-            return BenchmarkResult(is_resolved=False, metrics={"score": 0}, log={"error": e}, other={})
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": e}, other={})
         
         # Calculate whether the benchmark passed and the score based on the parsed results
         is_resolved = results.get("task_success_rate", 0) > 0.99
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
         message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
-        return BenchmarkResult(is_resolved=is_resolved, metrics={"score": score}, log=message, other={})
+        return BenchmarkResult(task_id=task_id, is_resolved=is_resolved, metrics={"score": score}, log=message, other={})
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

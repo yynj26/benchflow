@@ -48,6 +48,7 @@ class SwebenchBench(BaseBench):
                 report = json.load(f)
 
             return {
+                "task_id": task_id,
                 "is_resolved": pass_rate > 0.99,
                 "metrics": {
                     "pass_rate": pass_rate,
@@ -57,6 +58,7 @@ class SwebenchBench(BaseBench):
             }
         except Exception as e:
             return {
+                "task_id": task_id,
                 "is_resolved": False,
                 "metrics": {
                     "pass_rate": 0,

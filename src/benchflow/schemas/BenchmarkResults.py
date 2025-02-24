@@ -5,6 +5,7 @@ from pydantic import BaseModel
 MetricValue = Union[bool, int, float, str]
 
 class BenchmarkResult(BaseModel):
+    task_id: str
     is_resolved: bool
     log: Dict[str, str]
     metrics: Dict[str, MetricValue]

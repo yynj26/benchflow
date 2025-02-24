@@ -32,6 +32,7 @@ class MMLUPROBench(BaseBench):
 
             log = ''.join(json.dumps(item, ensure_ascii=False) for item in result)
             return BenchmarkResult(
+                task_id=task_id,
                 is_resolved=True,
                 metrics={"score": summary['total']['acc']},
                 log=log,
@@ -39,6 +40,7 @@ class MMLUPROBench(BaseBench):
             )
         except Exception as e:
             return BenchmarkResult(
+                task_id=task_id,
                 is_resolved=False,
                 metrics={"score": 0},
                 log={"error": str(e)},
