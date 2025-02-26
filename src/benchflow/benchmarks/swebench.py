@@ -21,7 +21,7 @@ class SwebenchBench(BaseBench):
                 {"RUN_ID": task_id}
             ]
         }
-        return BenchArgs(arguments)
+        return BenchArgs(**arguments)
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:swebench-v1"
