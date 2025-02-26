@@ -24,10 +24,10 @@ class CRAGBench(BaseBench):
         return "danielfang001/benchflow:crag-v1" # TODO: check if we need to push the image to docker hub
     
     def get_results_dir_in_container(self) -> str:
-        return "/app/results"
+        return "/workspace/results"
 
     def get_log_files_dir_in_container(self) -> str:
-        return "/app/logs"
+        return "/workspace/logs"
        
     def get_result(self, task_id: str) -> Dict[str, Any]:
         result_file = os.path.join(self.results_dir, f"{task_id}_results.json")
