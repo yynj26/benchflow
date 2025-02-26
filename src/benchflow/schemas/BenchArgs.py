@@ -54,7 +54,7 @@ class BenchArgs(BaseModel):
             args[key] = runtime_args.get(key, default)
         return args
 
-    def __init__(self, config_source: Union[str, Dict[str, Any], None], **kwargs):
+    def __init__(self, config_source: Union[str, Dict[str, Any], None] = None, **kwargs):
         """
         The constructor accepts either a YAML file path or a dictionary as the configuration source.
         Additional keyword arguments can override or add to the configuration.
