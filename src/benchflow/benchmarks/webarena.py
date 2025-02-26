@@ -21,7 +21,7 @@ class WebArenaBench(BaseBench):
                 {"TEST_END_IDX": str(int(task_id) + 1)}
             ]
         }
-        return BenchArgs(**arguments)
+        return BenchArgs(arguments)
     
     def get_image_name(self) -> str:
         """

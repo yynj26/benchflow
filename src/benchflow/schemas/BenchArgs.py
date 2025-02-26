@@ -8,7 +8,7 @@ class BenchArgs(BaseModel):
     # List of required parameter names (no defaults provided)
     required: List[str] = Field(default_factory=list)
     # Optional parameters can be used to define the parameters that are not required and the default values
-    optional: List[Dict[str, Any]] = Field(default_factory=list)
+    optional: Dict[str, Any] = Field(default_factory=dict)
 
     @field_validator('optional', mode='before')
     def merge_optional(cls, v):
@@ -18,6 +18,7 @@ class BenchArgs(BaseModel):
             [ { "param3": 1 }, { "param4": "string" } ]
         will be merged into:
             { "param3": 1, "param4": "string" }
+        If 'optional' is already a dictionary, return it as is.
         """
         if isinstance(v, list):
             merged = {}
@@ -27,8 +28,11 @@ class BenchArgs(BaseModel):
                 else:
                     raise ValueError("Each item in 'optional' must be a dictionary")
             return merged
+        elif isinstance(v, dict):
+            return v
         else:
             raise ValueError("'optional' must be a dictionary or a list of dictionaries")
+
 
     def get_args(self, runtime_args: Dict[str, Any] = None) -> Dict[str, Any]:
         """
@@ -54,7 +58,7 @@ class BenchArgs(BaseModel):
             args[key] = runtime_args.get(key, default)
         return args
 
-    def __init__(self, config_source: Union[str, Dict[str, Any], None] = None, **kwargs):
+    def __init__(self, config_source: Union[str, Dict[str, Any], None]):
         """
         The constructor accepts either a YAML file path or a dictionary as the configuration source.
         Additional keyword arguments can override or add to the configuration.
@@ -72,5 +76,4 @@ class BenchArgs(BaseModel):
         else:
             raise ValueError("config_source must be a YAML file path or a dictionary")
         
-        data.update(kwargs)
         super().__init__(**data)
