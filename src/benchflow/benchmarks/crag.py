@@ -8,6 +8,7 @@ class CRAGConfig(BaseBenchConfig):
 
     def __init__(self, params: Dict[str, Any], task_id: str):
         params.setdefault("BATCH_SIZE", 100)
+        self.defaults = {"BATCH_SIZE": 100}
         self.required_params = ["OPENAI_API_KEY", "EVALUATION_MODEL_NAME"] # for llm api call evaluation when exact match fails
         self.optional_params = ["BATCH_SIZE"]
         super().__init__(params)
@@ -21,7 +22,7 @@ class CRAGBench(BaseBench):
         return CRAGConfig(params, task_id)
     
     def get_image_name(self) -> str:
-        return "danielfang001/benchflow:crag-v1" # TODO: check if we need to push the image to docker hub
+        return "danielfang001/benchflow:crag-v1"
     
     def get_results_dir_in_container(self) -> str:
         return "/workspace/results"
@@ -67,11 +68,6 @@ class CRAGBench(BaseBench):
         return {"task_ids": ["0"], "error_message": None}
         
     def cleanup(self):
-        if os.path.exists(self.results_dir):
-            self.logger.info(f"Removing {self.results_dir}")
-            subprocess.run(['sudo', 'rm', '-rf', self.results_dir], check=True)
-        if os.path.exists(self.log_files_dir):
-            self.logger.info(f"Removing {self.log_files_dir}")
-            subprocess.run(['sudo', 'rm', '-rf', self.log_files_dir], check=True)
+        pass
 
 
