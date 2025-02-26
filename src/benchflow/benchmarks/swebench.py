@@ -5,15 +5,15 @@ from typing import Any, Dict
 from datasets import Dataset, load_dataset
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig, BenchmarkResult
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class SwebenchBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, task_id: str) -> BenchConfig:
-        config_dict = {
+    def get_args(self, task_id: str) -> BenchArgs:
+        arguments = {
             "required": [],
             "optional": [
                 {"INSTANCE_IDS": task_id},
@@ -21,7 +21,7 @@ class SwebenchBench(BaseBench):
                 {"RUN_ID": task_id}
             ]
         }
-        return BenchConfig(config_dict)
+        return BenchArgs(arguments)
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:swebench-v1"

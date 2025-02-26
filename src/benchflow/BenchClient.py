@@ -18,10 +18,10 @@ class BenchClient(ABC):
         - parse_response
     """
     
-    def __init__(self, agent_url: str, max_retry: int = 1):
-        self.agent_url = agent_url.rstrip('/')
+    def __init__(self, intelligence_url: str, max_retry: int = 1):
+        self.intelligence_url = intelligence_url.rstrip('/')
         self.max_retry = max_retry
-        logger.info(f"[{self.__class__.__name__}] Initialized with agent_url: {agent_url}")
+        logger.info(f"[{self.__class__.__name__}] Initialized with intelligence_url: {intelligence_url}")
 
     @final
     def get_response(self, raw_input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -41,7 +41,7 @@ class BenchClient(ABC):
         for attempt in range(self.max_retry):
             try:
                 response = requests.post(
-                    urljoin(self.agent_url, "action"),
+                    urljoin(self.intelligence_url, "action"),
                     json=input_data.model_dump()
                 )
                 response.raise_for_status()

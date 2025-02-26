@@ -4,24 +4,24 @@ import subprocess
 from typing import Any, Dict
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig, BenchmarkResult
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class WebArenaBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, task_id: str) -> BenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
-        Return a WebArenaConfig instance that validates the input parameters.
+        Return a WebArenaConfig instance that validates the input arguments.
         """
-        config_dict = {
+        arguments = {
             "required": [],
             "optional": [
                 {"TEST_END_IDX": str(int(task_id) + 1)}
             ]
         }
-        return BenchConfig(config_dict)
+        return BenchArgs(arguments)
     
     def get_image_name(self) -> str:
         """

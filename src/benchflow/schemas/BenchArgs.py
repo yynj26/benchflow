@@ -4,7 +4,7 @@ import yaml
 from pydantic import BaseModel, Field, field_validator
 
 
-class BenchConfig(BaseModel):
+class BenchArgs(BaseModel):
     # List of required parameter names (no defaults provided)
     required: List[str] = Field(default_factory=list)
     # Optional parameters can be used to define the parameters that are not required and the default values
@@ -30,29 +30,29 @@ class BenchConfig(BaseModel):
         else:
             raise ValueError("'optional' must be a dictionary or a list of dictionaries")
 
-    def get_params(self, runtime_params: Dict[str, Any] = None) -> Dict[str, Any]:
+    def get_args(self, runtime_args: Dict[str, Any] = None) -> Dict[str, Any]:
         """
-        Merge runtime parameters with configuration defaults and return the final parameters.
+        Merge runtime arguments with configuration defaults and return the final arguments.
         
         For each parameter in 'required', a value must be provided in the runtime dictionary;
         otherwise, a ValueError is raised.
         For each parameter in 'optional', if a runtime value is provided, it is used;
         otherwise, the default value from the configuration is used.
         """
-        runtime_params = runtime_params or {}
-        params = {}
+        runtime_args = runtime_args or {}
+        args = {}
         
         # Validate and fetch required parameters from runtime
         for key in self.required:
-            if key in runtime_params and runtime_params[key] is not None:
-                params[key] = runtime_params[key]
+            if key in runtime_args and runtime_args[key] is not None:
+                args[key] = runtime_args[key]
             else:
-                raise ValueError(f"Missing required parameter: {key}")
+                raise ValueError(f"Missing required argument: {key}")
         
         # For optional parameters, use runtime value if provided; otherwise, use the default value
         for key, default in self.optional.items():
-            params[key] = runtime_params.get(key, default)
-        return params
+            args[key] = runtime_args.get(key, default)
+        return args
 
     def __init__(self, config_source: Union[str, Dict[str, Any], None], **kwargs):
         """

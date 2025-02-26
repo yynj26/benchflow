@@ -4,7 +4,7 @@ import os
 from typing import Any, Dict
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig, BenchmarkResult
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 #------------------------------------------------------------------------------
@@ -14,20 +14,20 @@ class WebCanvasBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, task_id: str) -> BenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
-        Return a WebCanvasConfig instance, validate the input parameters.
+        Return a WebCanvasConfig instance, validate the input arguments.
         """
         # Benchmark need to deal with the END_IDX so that it can only run one task at a time
         # task_id is the start index of the task
-        config_dict = {
+        arguments = {
             "required": ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"],
             "optional": [
                 {"TEST_START_IDX": task_id},
                 {"RESULTS_DIR": "/app/batch_tasks_results/example"}
             ]
         }
-        return BenchConfig(config_dict)
+        return BenchArgs(arguments)
 
     def get_image_name(self) -> str:
         """

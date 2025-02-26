@@ -1,4 +1,4 @@
-from .BenchConfig import BenchConfig
+from .BenchArgs import BenchArgs
 from .BenchmarkResults import BenchmarkResult
 
-__all__ = ["BenchmarkResult", "BenchConfig"]
+__all__ = ["BenchmarkResult", "BenchArgs"]

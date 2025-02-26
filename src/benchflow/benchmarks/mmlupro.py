@@ -5,12 +5,12 @@ from typing import Any, Dict
 from datasets import load_dataset
 
 from benchflow import BaseBench
-from benchflow.schemas import BenchConfig, BenchmarkResult
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class MMLUPROBench(BaseBench):
-    def get_config(self, task_id: str) -> BenchConfig:
-        return BenchConfig()
+    def get_args(self, task_id: str) -> BenchArgs:
+        return BenchArgs()
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:mmlu-pro-v1"

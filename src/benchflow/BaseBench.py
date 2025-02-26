@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, final
 import docker
 from pydantic import ValidationError
 
-from benchflow.schemas import BenchConfig, BenchmarkResult
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class ColoredFormatter(logging.Formatter):
@@ -43,7 +43,7 @@ class BaseBench(ABC):
     Base class for all benchmarks. (Now you should name your benchmark class end with "Bench". To be deleted in benchflow v0.2.0)    
     If you want to integrate your benchmark with BenchFlow, you need to implement the following methods:
     ```
-    - get_config
+    - get_args
     - get_image_name
     - get_results_dir_in_container
     - get_log_files_dir_in_container
@@ -51,20 +51,20 @@ class BaseBench(ABC):
     - get_all_tasks
     ```
     Please open a PR to add your benchmark to the BenchFlow benchmarks.
-    All you need to include in the PR is a script with the definition of the subclass of BaseBench and BaseBenchConfig.
+    All you need to include in the PR is a script with the definition of the subclass of BaseBench and BenchArgs.
     """
     def __init__(self):
         self.logger = setup_logger(self.__class__.__name__)
         self.docker_client = docker.from_env()
 
     @final
-    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> BenchmarkResult:
+    def run_bench(self, task_id: str, agent_url: str, arguments: Dict[str, Any]) -> BenchmarkResult:
         """
         Run the benchmark through docker.
         """
-        config = self.get_config(task_id)
-        params = config.get_params(params)
-        params.update({
+        args_config = self.get_args(task_id)
+        arguments = args_config.get_args(arguments)
+        arguments.update({
             "AGENT_URL": agent_url,
             "TEST_START_IDX": str(task_id),
         })
@@ -79,7 +79,7 @@ class BaseBench(ABC):
         try:
             container = self.docker_client.containers.run(
                 image=self.get_image_name(),
-                environment=params,
+                environment=arguments,
                 volumes=self.get_volumes(),
                 remove=True,
                 detach=True
@@ -125,7 +125,7 @@ class BaseBench(ABC):
         }
     
     @abstractmethod
-    def get_config(self, task_id: str) -> BenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
         Benchmark need to deal with the END_IDX so that it can only run one task at a time
         task_id is the start index of the task. You can also make your benchmark a single 
