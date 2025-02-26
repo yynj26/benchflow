@@ -3,8 +3,8 @@ from .BaseBench import BaseBench
 from .Bench import Bench
 from .BenchClient import BenchClient
 from .load_benchmark import load_benchmark
-from .schemas import BenchConfig, BenchmarkResult
+from .schemas import BenchArgs, BenchmarkResult
 
 __version__ = "0.1.7"
 
-__all__ = ["Bench", "BaseAgent", "BenchClient", "load_benchmark", "BaseBench", "BenchmarkResult", "BenchConfig"]
+__all__ = ["Bench", "BaseAgent", "BenchClient", "load_benchmark", "BaseBench", "BenchmarkResult", "BenchArgs"]
