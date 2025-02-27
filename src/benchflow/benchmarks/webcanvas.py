@@ -27,7 +27,7 @@ class WebCanvasBench(BaseBench):
                 {"RESULTS_DIR": "/app/batch_tasks_results/example"}
             ]
         }
-        return BenchArgs(**arguments)
+        return BenchArgs(arguments)
 
     def get_image_name(self) -> str:
         """

@@ -10,7 +10,7 @@ from benchflow.schemas import BenchArgs, BenchmarkResult
 
 class MMLUPROBench(BaseBench):
     def get_args(self, task_id: str) -> BenchArgs:
-        return BenchArgs()
+        return BenchArgs(None)
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:mmlu-pro-v1"
