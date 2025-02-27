@@ -4,23 +4,24 @@ from typing import Any, Dict
 
 from datasets import Dataset, load_dataset
 
-from benchflow import BaseBench, BaseBenchConfig
-
-
-class SwebenchConfig(BaseBenchConfig):
-    required_env = []
-    optional_env = ["INSTANCE_IDS", "MAX_WORKERS", "RUN_ID"]
-
-    def __init__(self, params: Dict[str, Any], task_id: str):
-        params.setdefault("INSTANCE_IDS", task_id)
-        params.setdefault("MAX_WORKERS", 1)
-        params.setdefault("RUN_ID", task_id)
-        super().__init__(params)
+from benchflow import BaseBench
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class SwebenchBench(BaseBench):
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
-        return SwebenchConfig(params, task_id)
+    def __init__(self):
+        super().__init__()
+
+    def get_args(self, task_id: str) -> BenchArgs:
+        arguments = {
+            "required": [],
+            "optional": [
+                {"INSTANCE_IDS": task_id},
+                {"MAX_WORKERS": 1},
+                {"RUN_ID": task_id}
+            ]
+        }
+        return BenchArgs(arguments)
 
     def get_image_name(self) -> str:
         return "kirk2000/benchflow:swebench-v1"
@@ -31,7 +32,7 @@ class SwebenchBench(BaseBench):
     def get_log_files_dir_in_container(self) -> str:
         return "/app/logs"
 
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         results_file = os.path.join(self.results_dir, f"self_model.{task_id}.json")
         model_prediction_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/patch.diff")
         report_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/report.json")
@@ -45,19 +46,23 @@ class SwebenchBench(BaseBench):
                 model_prediction = f.read()
             with open(report_file, 'r') as f:
                 report = json.load(f)
-            return {
-                    "is_resolved": pass_rate > 0.99,
-                    "score": pass_rate,
-                    "message": {"details": result_data},
-                    "log": model_prediction + "\n" + json.dumps(report),
-                }
+
+            return BenchmarkResult(
+                task_id=task_id,
+                is_resolved=pass_rate > 0.99,
+                metrics={"pass_rate": pass_rate},
+                log={"prediction": model_prediction, "report": report},
+                other={"details": result_data},
+            )
         except Exception as e:
-            return {
-                "is_resolved": False,
-                "score": 0,
-                "message": {"error": str(e)},
-                "log": str(e),
-            }
+            return BenchmarkResult(
+                task_id=task_id,
+                is_resolved=False,
+                metrics={"pass_rate": 0},
+                log={"error": str(e)},
+                other={"error": str(e)},
+            )
+        
         
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         try:

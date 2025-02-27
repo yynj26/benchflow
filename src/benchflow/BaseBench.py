@@ -3,9 +3,12 @@ import os
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, final
+from typing import Any, Dict, Optional, final
 
 import docker
+from pydantic import ValidationError
+
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
 class ColoredFormatter(logging.Formatter):
@@ -35,65 +38,12 @@ def setup_logger(name: str, log_file: Optional[str] = None) -> logging.Logger:
 
     return logger
 
-
-class BaseBenchConfig:
-    """
-    Config Class for all benchmark configurations.
-    You can specify the required and optional parameters 
-    in the __init__ method in your subclass of BaseBench.
-    
-    For example:
-    ```
-        def __init__(self, params: Dict[str, Any]):
-            params.setdefault("PARAM1", "DEFAULT1")
-            params.setdefault("PARAM2", "DEFAULT2")
-            params.setdefault("PARAM3", "DEFAULT3")
-            params.setdefault("PARAM4", "DEFAULT4")
-            self.required_params = ["PARAM1", "PARAM2"]
-            self.optional_params = ["PARAM3", "PARAM4"]
-            super().__init__(params)
-    ```
-            
-    """
-    required_params: List[str] = []
-    optional_params: List[str] = []
-
-    def __init__(self, params: Dict[str, Any]):
-        self.params = params
-
-    def validate(self):
-        """
-        Validate the parameters passed to the benchmark.
-        """
-        missing = [
-            key for key in self.required_params
-            if key not in self.params or not self.params[key]
-        ]
-        if missing:
-            raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
-
-    @final
-    def get_params(self) -> Dict[str, str]:
-        """
-        Get the parameters of the benchmark.
-        The parameters are used to configure the benchmark.
-        """
-        params = {}
-        for key in self.required_params + self.optional_params:
-            value = self.params.get(key)
-            if value is not None:
-                params[key] = str(value)
-        for key, value in self.defaults.items():
-            if key not in params:
-                params[key] = str(value)
-        return params
-
 class BaseBench(ABC):
     """
     Base class for all benchmarks. (Now you should name your benchmark class end with "Bench". To be deleted in benchflow v0.2.0)    
     If you want to integrate your benchmark with BenchFlow, you need to implement the following methods:
     ```
-    - get_config
+    - get_args
     - get_image_name
     - get_results_dir_in_container
     - get_log_files_dir_in_container
@@ -101,19 +51,23 @@ class BaseBench(ABC):
     - get_all_tasks
     ```
     Please open a PR to add your benchmark to the BenchFlow benchmarks.
-    All you need to include in the PR is a script with the definition of the subclass of BaseBench and BaseBenchConfig.
+    All you need to include in the PR is a script with the definition of the subclass of BaseBench and BenchArgs.
     """
     def __init__(self):
         self.logger = setup_logger(self.__class__.__name__)
         self.docker_client = docker.from_env()
 
     @final
-    def run_bench(self, task_id: str, agent_url: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def run_bench(self, task_id: str, agent_url: str, arguments: Dict[str, Any]) -> BenchmarkResult:
         """
         Run the benchmark through docker.
         """
-        config = self.get_config(params, task_id)
-        config.validate()
+        args_config = self.get_args(task_id)
+        arguments = args_config.get_args(arguments)
+        arguments.update({
+            "AGENT_URL": agent_url,
+            "TEST_START_IDX": str(task_id),
+        })
 
         bench_name = self.__class__.__name__
         timestamp = str(time.time())
@@ -122,16 +76,10 @@ class BaseBench(ABC):
         os.makedirs(self.results_dir, exist_ok=True)    
         os.makedirs(self.log_files_dir, exist_ok=True)
 
-        params = config.get_params()
-        params.update({
-            "AGENT_URL": agent_url,
-            "TEST_START_IDX": str(task_id),
-        })
-
         try:
             container = self.docker_client.containers.run(
                 image=self.get_image_name(),
-                environment=params,
+                environment=arguments,
                 volumes=self.get_volumes(),
                 remove=True,
                 detach=True
@@ -144,41 +92,16 @@ class BaseBench(ABC):
             container.wait()
 
             result = self.get_result(task_id)
-            if not self.validate_result(result):
-                return self.format_result(task_id, False, 0, {"error": "Benchmark result is invalid", "result": str(result)})
-            print(result)
-            return self.format_result(task_id, result["is_resolved"], result["score"], result["message"], result["log"])
+            if isinstance(result, Dict):
+                result = BenchmarkResult(**result)
+            return result
+        except ValidationError as e:
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "Benchmark result is invalid", "result": str(e)}, other={})
         except docker.errors.ImageNotFound:
-            return self.format_result(task_id, False, 0, {"error": "Image not found"})
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "Image not found"}, other={})
         except Exception as e:
             self.logger.exception("Error during benchmark execution:")
-            return self.format_result(task_id, False, 0, {"error": str(e)})
-
-    @final
-    def format_result(self, task_id: str, is_resolved: bool, score: float, message: Dict[str, Any], log: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Format the result of the benchmark.
-        
-        The result should be a dictionary with the following keys:
-        ``` 
-        {
-            "task_id": the id of the task,
-            "is_resolved": a boolean value indicating if the task is resolved,
-            "score": a float value indicating the score of the task,
-            "message": a dictionary containing any information you want to show to the agent user,
-            "log": a string containing the log of the task (trace, trajectory, etc)
-        }
-        ```
-        """
-        if log is None:
-            log = message["error"]
-        return {
-            "task_id": task_id,
-            "is_resolved": is_resolved,
-            "score": score,
-            "message": message,
-            "log": log
-        }
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": str(e)}, other={})
 
     @final
     def get_volumes(self) -> Dict[str, Dict[str, str]]:
@@ -201,29 +124,8 @@ class BaseBench(ABC):
             }
         }
     
-    @final
-    def validate_result(self, result: Dict[str, Any]) -> bool:
-        """
-        Validate the result of the benchmark.
-        """
-        if result.get("is_resolved") is None:
-            return False
-        if result.get("score") is None:
-            return False
-        if result.get("message") is None:
-            return False
-        return True
-    
-    def cleanup(self):
-        """
-        Clean up benchmark resources.
-        It will be called when the benchmark is finished.
-        Just leave it empty if you don't need to clean up anything.
-        """
-        pass
-    
     @abstractmethod
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
         Benchmark need to deal with the END_IDX so that it can only run one task at a time
         task_id is the start index of the task. You can also make your benchmark a single 
@@ -254,19 +156,20 @@ class BaseBench(ABC):
         pass
 
     @abstractmethod
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         You should return the results in this function.
         
-        The result should be a dictionary with the following keys:
-        ```
-        { 
-            "is_resolved": a boolean value indicating if the task is resolved, 
-            "score": a float value indicating the score of the task, 
-            "message": a dictionary containing any information you want to show to the agent user,
-            "log": a string containing the log of the task (trace, trajectory, etc)
-        }
-        ```
+        Return a BenchmarkResult containing the benchmark results.
+
+        The BenchmarkResult model has the following fields:
+            - is_resolved (bool): Indicates whether the task is resolved.
+            - message (dict): Contains additional information to be displayed to the agent user.
+            - log (str): Contains the log output (e.g., trace, trajectory, etc).
+            - metrics (dict): A dictionary of various metrics, where each metric can be of different types (e.g., bool, int, float, or str).
+            - other (dict): Any extra fields or metadata relevant to the benchmark result.
+        
+        Please refer to the example in the definition of BenchmarkResult for the expected format.
         """
         pass
 

@@ -1,10 +1,11 @@
-from pathlib import Path
 import json
 import logging
 import sys
-import time
 import threading
+import time
+from pathlib import Path
 from typing import Any, Dict, List, Union
+
 import requests
 
 from .BaseAgent import BaseAgent
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 class Bench:
     def __init__(self, benchmark_name: str, bf_token: str):
         self.benchmark_name = benchmark_name
-        self.bff_url = f"https://staging.benchflow.ai"
+        self.bff_url = "https://staging.benchflow.ai"
         self.bf_token = bf_token
         project_dir = Path(__file__).parents[2]
         self.results_dir = project_dir / "results" / self.benchmark_name
@@ -63,7 +64,6 @@ class Bench:
         try:
             with open(requirements_txt, 'r') as f:
                 requirements_txt = f.read()
-            install_sh = None
             if install_sh:
                 with open(install_sh, 'r') as f:
                     install_sh = f.read()
@@ -87,7 +87,7 @@ class Bench:
 
         headers = {
             "x-bf-api-key": self.bf_token,
-            "x-bf-source": "python-sdk 0.1.6"
+            "x-bf-source": "python-sdk 0.1.8"
         }
 
         try:
