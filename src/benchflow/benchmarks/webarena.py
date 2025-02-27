@@ -41,7 +41,7 @@ class WebArenaBench(BaseBench):
         """
         return "/app/log_files"
     
-    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         Read and parse the benchmark result from the log files.
         

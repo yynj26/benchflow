@@ -32,7 +32,7 @@ class SwebenchBench(BaseBench):
     def get_log_files_dir_in_container(self) -> str:
         return "/app/logs"
 
-    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         results_file = os.path.join(self.results_dir, f"self_model.{task_id}.json")
         model_prediction_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/patch.diff")
         report_file = os.path.join(self.log_files_dir, f"run_evaluation/{task_id}/self_model/{task_id}/report.json")
@@ -47,25 +47,22 @@ class SwebenchBench(BaseBench):
             with open(report_file, 'r') as f:
                 report = json.load(f)
 
-            return {
-                "task_id": task_id,
-                "is_resolved": pass_rate > 0.99,
-                "metrics": {
-                    "pass_rate": pass_rate,
-                },
-                "log": {"prediction": model_prediction, "report": report},
-                "other": {"details": result_data},
-            }
+            return BenchmarkResult(
+                task_id=task_id,
+                is_resolved=pass_rate > 0.99,
+                metrics={"pass_rate": pass_rate},
+                log={"prediction": model_prediction, "report": report},
+                other={"details": result_data},
+            )
         except Exception as e:
-            return {
-                "task_id": task_id,
-                "is_resolved": False,
-                "metrics": {
-                    "pass_rate": 0,
-                },
-                "log": {"error": str(e)},
-                "other": {"error": str(e)},
-            }
+            return BenchmarkResult(
+                task_id=task_id,
+                is_resolved=False,
+                metrics={"pass_rate": 0},
+                log={"error": str(e)},
+                other={"error": str(e)},
+            )
+        
         
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         try:

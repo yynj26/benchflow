@@ -48,7 +48,7 @@ class WebCanvasBench(BaseBench):
         """
         return "/app/LOGS"
 
-    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         Read the result file (assuming the path is: {results_dir}/example/result/result.json),
         and parse the result dictionary, which requires the is_resolved, score, and message fields.

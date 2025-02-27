@@ -156,7 +156,7 @@ class BaseBench(ABC):
         pass
 
     @abstractmethod
-    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         You should return the results in this function.
         

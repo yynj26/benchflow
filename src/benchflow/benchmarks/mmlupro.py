@@ -21,7 +21,7 @@ class MMLUPROBench(BaseBench):
     def get_log_files_dir_in_container(self) -> str:
         return "/app/logs" # Useless
 
-    def get_result(self, task_id: str) -> BenchmarkResult | Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         summary_file = os.path.join(self.results_dir, f"{task_id}_summary.json")
         result_file = os.path.join(self.results_dir, f"{task_id}_result.json")
         try:
