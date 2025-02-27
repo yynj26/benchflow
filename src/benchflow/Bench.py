@@ -64,7 +64,6 @@ class Bench:
         try:
             with open(requirements_txt, 'r') as f:
                 requirements_txt = f.read()
-            install_sh = None
             if install_sh:
                 with open(install_sh, 'r') as f:
                     install_sh = f.read()
