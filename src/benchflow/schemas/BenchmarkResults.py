@@ -7,12 +7,12 @@ MetricValue = Union[bool, int, float, str]
 class BenchmarkResult(BaseModel):
     task_id: str
     is_resolved: bool
-    log: Dict[str, str]
+    log: Dict[str, Any]
     metrics: Dict[str, MetricValue]
     other: Dict[str, Any]
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "is_resolved": True,
                 "log": {
