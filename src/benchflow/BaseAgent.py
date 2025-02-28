@@ -4,12 +4,10 @@ from typing import Any, Dict, final
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+
+from benchflow.schemas.InputData import InputData
 
 logger = logging.getLogger(__name__)
-
-class FeedbackRequest(BaseModel):
-   env_info: Dict[str, Any] = None
 
 class BaseAgent(ABC):
     """
@@ -31,10 +29,10 @@ class BaseAgent(ABC):
         Setup the routes for the agent.
         """
         @self.app.post("/action")
-        async def take_action(feedback: FeedbackRequest):
+        async def take_action(feedback: InputData):
             try:
-                self.update_env_info(feedback.model_dump()['env_info'])
-                action = self.call_api(feedback.model_dump()['env_info'])
+                self.update_env_info(feedback.input_data)
+                action = self.call_api(feedback.input_data)
                 logger.info(f"[BaseAgent]: Got action from API: {action}")
                 return {"action": action}
             except Exception as e:

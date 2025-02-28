@@ -1,6 +1,6 @@
-import pkgutil
 import importlib
 import inspect
+import pkgutil
 
 from benchflow import BaseBench
 

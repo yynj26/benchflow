@@ -3,21 +3,9 @@ import json
 import os
 from typing import Any, Dict
 
-from benchflow import BaseBench, BaseBenchConfig
+from benchflow import BaseBench
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
-
-#------------------------------------------------------------------------------
-# Custom configuration: Define the environment variables and validation rules for WebCanvasBench
-#------------------------------------------------------------------------------
-class WebCanvasConfig(BaseBenchConfig):
-    # These envs are required by the benchmark, and should be provided by the user.
-    required_env = ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY", "TEST_END_IDX"]
-    # These envs are optional, and will use the default value if not provided.
-    optional_env = []
-    # These envs are defaults, and will be used if not provided.
-    defaults = {
-        "RESULTS_DIR": "/app/batch_tasks_results/example"
-    }
 
 #------------------------------------------------------------------------------
 # WebCanvasBench implementation
@@ -26,14 +14,20 @@ class WebCanvasBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
-        Return a WebCanvasConfig instance, validate the input parameters.
+        Return a WebCanvasConfig instance, validate the input arguments.
         """
         # Benchmark need to deal with the END_IDX so that it can only run one task at a time
         # task_id is the start index of the task
-        params["TEST_END_IDX"] = str(task_id)
-        return WebCanvasConfig(params)
+        arguments = {
+            "required": ["BROWSERBASE_API_KEY", "GRAPHQL_USERNAME", "GRAPHQL_PASSWORD", "OPENAI_API_KEY"],
+            "optional": [
+                {"TEST_START_IDX": task_id},
+                {"RESULTS_DIR": "/app/batch_tasks_results/example"}
+            ]
+        }
+        return BenchArgs(arguments)
 
     def get_image_name(self) -> str:
         """
@@ -54,7 +48,7 @@ class WebCanvasBench(BaseBench):
         """
         return "/app/LOGS"
 
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         Read the result file (assuming the path is: {results_dir}/example/result/result.json),
         and parse the result dictionary, which requires the is_resolved, score, and message fields.
@@ -62,9 +56,8 @@ class WebCanvasBench(BaseBench):
         # Construct the full path to the result file (related to the RESULTS_DIR configuration inside the container)
         result_file = os.path.join(self.results_dir, "example", "result", "result.json")
         log_file = os.path.join(self.results_dir, "example", "result", "out.json")
-        print(result_file)
         if not os.path.exists(result_file):
-            return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": "No results found"}, other={})
         try:
             with open(result_file, 'r') as f:
                 data = f.read().strip()
@@ -78,14 +71,14 @@ class WebCanvasBench(BaseBench):
                 log = f.read().strip()
                 print(log)
         except Exception as e:
-            return {"is_resolved": False, "score": 0, "message": {"error": e}}
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": e}, other={})
         
         # Calculate whether the benchmark passed and the score based on the parsed results
         is_resolved = results.get("task_success_rate", 0) > 0.99
         score = results.get("average_step_score_rate", 0)
         # Concatenate the result details in key-value pair format
         message = {"details": ', '.join(f"{k}: {v}" for k, v in results.items())}
-        return {"is_resolved": is_resolved, "score": score, "message": message, "log": str(log)}
+        return BenchmarkResult(task_id=task_id, is_resolved=is_resolved, metrics={"score": score}, log=message, other={})
 
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

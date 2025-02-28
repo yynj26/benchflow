@@ -3,33 +3,25 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from benchflow import BaseBench, BaseBenchConfig
+from benchflow import BaseBench
+from benchflow.schemas import BenchArgs, BenchmarkResult
 
 
-# ------------------------------------------------------------------------------
-# WebArenaConfig: Define the configuration for WebArenaBench.
-# For WebArenaBench no extra environment variables are required.
-# ------------------------------------------------------------------------------
-class WebArenaConfig(BaseBenchConfig):
-    required_env = ["TEST_END_IDX"]   # No required env variables for WebArenaBench
-    optional_env = []
-    defaults = {
-        "RESULTS_DIR": "/app/results"
-    }
-
-# ------------------------------------------------------------------------------
-# WebArenaBench Implementation
-# ------------------------------------------------------------------------------
 class WebArenaBench(BaseBench):
     def __init__(self):
         super().__init__()
 
-    def get_config(self, params: Dict[str, Any], task_id: str) -> BaseBenchConfig:
+    def get_args(self, task_id: str) -> BenchArgs:
         """
-        Return a WebArenaConfig instance that validates the input parameters.
+        Return a WebArenaConfig instance that validates the input arguments.
         """
-        params["TEST_END_IDX"] = str(int(task_id) + 1)
-        return WebArenaConfig(params)
+        arguments = {
+            "required": [],
+            "optional": [
+                {"TEST_END_IDX": str(int(task_id) + 1)}
+            ]
+        }
+        return BenchArgs(arguments)
     
     def get_image_name(self) -> str:
         """
@@ -49,7 +41,7 @@ class WebArenaBench(BaseBench):
         """
         return "/app/log_files"
     
-    def get_result(self, task_id: str) -> Dict[str, Any]:
+    def get_result(self, task_id: str) -> BenchmarkResult:
         """
         Read and parse the benchmark result from the log files.
         
@@ -59,7 +51,7 @@ class WebArenaBench(BaseBench):
         """
         log_files_txt = os.path.join(self.results_dir, "log_files.txt")
         if not os.path.exists(log_files_txt):
-            return {"is_resolved": False, "score": 0, "message": {"error": "No results found"}}
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0},log={"error": "No results found"}, other={})
         
         log_content = ""
         try:
@@ -71,7 +63,7 @@ class WebArenaBench(BaseBench):
                     with open(full_log_path, 'r') as log_file:
                         log_content += log_file.read() + "\n"
         except Exception as e:
-            return {"is_resolved": False, "score": 0, "message": {"error": f"Failed to read log files: {e}"}}
+            return BenchmarkResult(task_id=task_id, is_resolved=False, metrics={"score": 0}, log={"error": f"Failed to read log files: {e}"}, other={})
         
         # Parse the log content to extract score and status
         is_resolved = False
@@ -86,7 +78,7 @@ class WebArenaBench(BaseBench):
                 if "(PASS)" in line:
                     is_resolved = True
                     
-        return {"is_resolved": is_resolved, "score": score, "message": {"details": "Task runs successfully."}, "log": log_content}
+        return BenchmarkResult(task_id=task_id, is_resolved=is_resolved, metrics={"score": score}, log={"details": log_content}, other={})
     
     def get_all_tasks(self, split: str) -> Dict[str, Any]:
         """

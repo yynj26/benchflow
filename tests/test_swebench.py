@@ -3,7 +3,6 @@ import os
 from benchflow import load_benchmark
 from benchflow.agents.swebench_sweagent import SWEAgent
 
-
 bench = load_benchmark(benchmark_name="swebench", bf_token=os.getenv("BF_TOKEN"))
 
 your_agents = SWEAgent()
