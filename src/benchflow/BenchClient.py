@@ -56,7 +56,7 @@ class BenchClient(ABC):
             raw_action = response.json()['action']
             logger.info(f"[{self.__class__.__name__}] Received action: {raw_action}")
             
-            parsed_action = self.parse_action(raw_action)
+            parsed_action = self.parse_response(raw_action)
             parsed_action["raw_prediction"] = raw_action
             
             return parsed_action
